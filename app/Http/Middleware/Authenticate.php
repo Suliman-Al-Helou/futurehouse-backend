@@ -9,6 +9,6 @@ class Authenticate extends Middleware
 {
     protected function redirectTo(Request $request): ?string
     {
-        return null;
+        return null; // ← بدل ما يعمل redirect، بيرجع 401
     }
 }
