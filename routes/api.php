@@ -26,7 +26,7 @@ Route::get('/courses/{course}', [CourseController::class, 'show']);
 
 // ─── Protected ────────────────────────────────────────────
 Route::middleware('auth:sanctum')->group(function () {
-
+    Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
     Route::get('/auth/me', [AuthController::class, 'me']);
     Route::post('/auth/logout', [AuthController::class, 'logout']);
 
