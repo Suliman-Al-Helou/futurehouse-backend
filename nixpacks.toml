@@ -3,9 +3,7 @@ nixPkgs = ["php84", "php84Extensions.pdo_pgsql", "php84Extensions.pgsql", "php84
 
 [phases.build]
 cmds = [
-  "composer install --no-dev --optimize-autoloader --ignore-platform-reqs",
-  "php artisan config:cache",
-  "php artisan route:cache"
+  "composer install --no-dev --optimize-autoloader --ignore-platform-reqs"
 ]
 
 [start]
