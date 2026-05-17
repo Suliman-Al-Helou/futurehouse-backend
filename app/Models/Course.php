@@ -13,7 +13,7 @@ class Course extends Model
         'title', 'description', 'cover_image',
         'level', 'status', 'total_duration',
         'what_you_learn', 'requirements', 'target_audience',
-        'students_count', 'instructor_name', 'rating', 'is_popular'
+        'students_count', 'instructor_name', 'rating', 'is_popular', 'price'
     ];
 
     protected $casts = [
@@ -21,6 +21,7 @@ class Course extends Model
         'is_popular'     => 'boolean',
         'rating'         => 'float',
         'total_duration' => 'integer',
+        'price'          => 'float',
     ];
 
     public function sections()

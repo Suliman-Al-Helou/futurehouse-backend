@@ -34,7 +34,7 @@ class CourseController extends Controller
                 'instructorBio' => '',
                 'lessons' => $course->lessons_count ?? 0,
                 'tags' => [],
-                'price' => 0,
+                'price' => $course->price ?? 0,
                 'hot' => $course->is_popular ?? false,
 
             ]);

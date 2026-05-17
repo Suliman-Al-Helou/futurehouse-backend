@@ -90,12 +90,13 @@ class AdminController extends Controller
             'instructor_name' => 'nullable|string',
             'rating' => 'nullable|numeric|min:0|max:5',
             'is_popular' => 'nullable|boolean',
+            'price' => 'nullable|numeric|min:0',
         ]);
 
         $course = Course::create($request->only([
             'title', 'description', 'level', 'status',
             'total_duration', 'what_you_learn', 'cover_image',
-            'instructor_name', 'rating', 'is_popular',
+            'instructor_name', 'rating', 'is_popular', 'price',
         ]));
 
         return response()->json($course, 201);
@@ -114,12 +115,13 @@ class AdminController extends Controller
             'instructor_name' => 'nullable|string',
             'rating' => 'nullable|numeric|min:0|max:5',
             'is_popular' => 'nullable|boolean',
+            'price' => 'nullable|numeric|min:0',
         ]);
 
         $course->update($request->only([
             'title', 'description', 'level', 'status',
             'total_duration', 'what_you_learn', 'cover_image',
-            'instructor_name', 'rating', 'is_popular',
+            'instructor_name', 'rating', 'is_popular', 'price',
         ]));
 
         return response()->json($course);
