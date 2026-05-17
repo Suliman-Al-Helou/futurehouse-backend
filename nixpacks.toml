@@ -1,6 +1,6 @@
 @"
 [phases.setup]
-nixPkgs = ["php83", "php83Extensions.pdo_pgsql", "php83Extensions.pgsql", "php83Extensions.mbstring", "php83Extensions.xml", "php83Extensions.curl", "php83Extensions.zip", "composer"]
+nixPkgs = ["php84", "php84Extensions.pdo_pgsql", "php84Extensions.pgsql", "php84Extensions.mbstring", "php84Extensions.xml", "php84Extensions.curl", "php84Extensions.zip", "composer"]
 
 [phases.build]
 cmds = [
@@ -11,8 +11,8 @@ cmds = [
 
 [start]
 cmd = "php artisan serve --host=0.0.0.0 --port=`$PORT"
-"@ | Out-File -FilePath "nixpacks.toml" -Encoding utf8
+"@ | Out-File -FilePath "nixpacks.toml" -Encoding utf8 -Force
 
 git add nixpacks.toml
-git commit -m "fix php version"
+git commit -m "use php84"
 git push
