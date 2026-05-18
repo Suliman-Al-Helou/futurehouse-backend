@@ -53,6 +53,7 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     // Courses
     Route::get('/courses', [AdminController::class, 'courses']);
     Route::post('/courses', [AdminController::class, 'storeCourse']);
+    Route::get('/courses/{course}', [AdminController::class, 'showCourse']);
     Route::put('/courses/{course}', [AdminController::class, 'updateCourse']);
     Route::delete('/courses/{course}', [AdminController::class, 'deleteCourse']);
     Route::get('/courses/{course}/sections', [AdminController::class, 'getSections']);

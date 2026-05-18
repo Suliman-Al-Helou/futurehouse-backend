@@ -279,4 +279,9 @@ class AdminController extends Controller
 
         return response()->json(['message' => 'تم الحذف']);
     }
+
+    public function showCourse(Course $course)
+    {
+        return response()->json($course->load('sections.lessons'));
+    }
 }
