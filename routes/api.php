@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\Auth\PasswordResetController;
 use App\Http\Controllers\Api\CourseController;
+use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\EnrollmentController;
 use App\Http\Controllers\Api\ProgressController;
 use App\Http\Controllers\Api\TaskController;
@@ -23,7 +24,8 @@ Route::prefix('auth')->group(function () {
 // ─── Courses (Public) ─────────────────────────────────────
 Route::get('/courses', [CourseController::class, 'index']);
 Route::get('/courses/{course}', [CourseController::class, 'show']);
-
+Route::get('/instructors', [AdminController::class, 'instructors']);
+Route::get('/instructors/{id}', [AdminController::class, 'showInstructor']); 
 // ─── Protected ────────────────────────────────────────────
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
@@ -74,6 +76,7 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
 
     Route::get('/instructors', [AdminController::class, 'instructors']);
     Route::post('/instructors', [AdminController::class, 'storeInstructor']);
+    Route::get('/instructors/{id}', [AdminController::class, 'showInstructor']);
     Route::put('/instructors/{instructor}', [AdminController::class, 'updateInstructor']);
     Route::delete('/instructors/{instructor}', [AdminController::class, 'deleteInstructor']);
 });

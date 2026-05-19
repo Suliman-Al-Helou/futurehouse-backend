@@ -12,9 +12,7 @@ return new class extends Migration
 public function up(): void
 {
     Schema::table('courses', function (Blueprint $table) {
-        if (!Schema::hasColumn('courses', 'price')) {
-            $table->decimal('price', 8, 2)->default(0)->after('is_popular');
-        }
+        $table->foreignId('instructor_id')->nullable()->constrained('instructors')->nullOnDelete();
     });
 }
 
@@ -24,7 +22,7 @@ public function up(): void
     public function down(): void
     {
         Schema::table('courses', function (Blueprint $table) {
-            $table->dropColumn('price');
+            //
         });
     }
 };

@@ -102,22 +102,8 @@ class AdminController extends Controller
         return response()->json($course, 201);
     }
 
-    public function updateCourse(Request $request, Course $course): JsonResponse
+    public function updateCourse(Request $request, Course $course)
     {
-        $request->validate([
-            'title' => 'sometimes|string|max:255',
-            'description' => 'sometimes|string',
-            'level' => 'sometimes|in:beginner,intermediate,advanced',
-            'status' => 'sometimes|in:draft,published,coming_soon',
-            'total_duration' => 'nullable|integer',
-            'what_you_learn' => 'nullable|array',
-            'cover_image' => 'nullable|string',
-            'instructor_name' => 'nullable|string',
-            'rating' => 'nullable|numeric|min:0|max:5',
-            'is_popular' => 'nullable|boolean',
-            'price' => 'nullable|numeric|min:0',
-        ]);
-
         $course->update($request->only([
             'title', 'description', 'level', 'status',
             'total_duration', 'what_you_learn', 'cover_image',
@@ -283,5 +269,12 @@ class AdminController extends Controller
     public function showCourse(Course $course)
     {
         return response()->json($course->load('sections.lessons'));
+    }
+
+    public function showInstructor(int $id): JsonResponse
+    {
+        $instructor = Instructor::with('courses')->findOrFail($id);
+
+        return response()->json($instructor);
     }
 }
