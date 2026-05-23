@@ -25,8 +25,8 @@ class CourseController extends Controller
                 'status' => $course->status,
                 'total_duration' => $course->total_duration,
                 'what_you_learn' => $course->what_you_learn ?? [],
-                'requirements' => $course->requirements ?? '',
-                'target_audience' => $course->target_audience ?? '',
+    'requirements' => $course->requirements ?? [],
+'target_audience' => $course->target_audience ?? [],
                 'students_count' => $course->enrollments_count,
                 'rating' => $course->rating ?? 0,
                 'reviews' => 0,
@@ -42,14 +42,19 @@ class CourseController extends Controller
         return response()->json($courses);
     }
 
-    public function show(Course $course): JsonResponse
-    {
-        $course->load(['sections' => function ($query) {
-            $query->orderBy('order');
-        }, 'sections.lessons' => function ($query) {
-            $query->orderBy('order');
-        }]);
+public function show(Course $course): JsonResponse
+{
+    $course->load(['sections' => function ($query) {
+        $query->orderBy('order');
+    }, 'sections.lessons' => function ($query) {
+        $query->orderBy('order');
+    }]);
 
-        return response()->json($course);
-    }
+    return response()->json([
+        ...$course->toArray(),
+        'what_you_learn'  => $course->what_you_learn  ?? [],
+        'requirements'    => $course->requirements    ?? [],
+        'target_audience' => $course->target_audience ?? [],
+    ]);
+}
 }

@@ -16,13 +16,15 @@ class Course extends Model
         'students_count', 'instructor_name', 'rating', 'is_popular', 'price'
     ];
 
-    protected $casts = [
-        'what_you_learn' => 'array',
-        'is_popular'     => 'boolean',
-        'rating'         => 'float',
-        'total_duration' => 'integer',
-        'price'          => 'float',
-    ];
+protected $casts = [
+    'what_you_learn'  => 'json',
+    'requirements'    => 'json',
+    'target_audience' => 'json',
+    'is_popular'      => 'boolean',
+    'rating'          => 'float',
+    'total_duration'  => 'integer',
+    'price'           => 'float',
+];
 
     public function sections()
     {

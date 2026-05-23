@@ -35,15 +35,35 @@ class AdminController extends Controller
 
         return response()->json($students);
     }
+public function courses(): JsonResponse
+{
+    $courses = Course::withCount('enrollments')
+        ->orderBy('created_at', 'desc')
+        ->get()
+        ->map(fn($course) => [
+            'id'               => $course->id,
+            'title'            => $course->title,
+            'description'      => $course->description,
+            'cover_image'      => $course->cover_image,
+            'level'            => $course->level,
+            'status'           => $course->status,
+            'total_duration'   => $course->total_duration,
+'requirements'    => json_decode($course->getRawOriginal('requirements'), true) ?? [],
+'target_audience' => json_decode($course->getRawOriginal('target_audience'), true) ?? [],
+'what_you_learn'  => json_decode($course->getRawOriginal('what_you_learn'), true) ?? [],
+            'students_count'   => $course->students_count,
+            'instructor_name'  => $course->instructor_name,
+            'rating'           => $course->rating,
+            'is_popular'       => $course->is_popular,
+            'price'            => $course->price,
+            'instructor_id'    => $course->instructor_id,
+            'enrollments_count'=> $course->enrollments_count,
+            'created_at'       => $course->created_at,
+            'updated_at'       => $course->updated_at,
+        ]);
 
-    public function courses(): JsonResponse
-    {
-        $courses = Course::withCount('enrollments')
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        return response()->json($courses);
-    }
+    return response()->json($courses);
+}
 
     public function stats(): JsonResponse
     {
@@ -102,7 +122,6 @@ class AdminController extends Controller
             'status',
             'total_duration',
             'what_you_learn',
-            
             'requirements',       // 👈 أضف
             'target_audience',
             'cover_image',
@@ -124,16 +143,22 @@ class AdminController extends Controller
             'status',
             'total_duration',
             'what_you_learn',
-             'requirements',       // 👈 أضف
-    'target_audience',
+            'requirements',       // 👈 أضف
+            'target_audience',
             'cover_image',
             'instructor_name',
             'rating',
             'is_popular',
             'price',
         ]));
+        $course->refresh();
 
-        return response()->json($course);
+        return response()->json([
+            ...$course->toArray(),
+            'what_you_learn'  => is_array($course->what_you_learn)  ? $course->what_you_learn  : [],
+            'requirements'    => is_array($course->requirements)    ? $course->requirements    : [],
+            'target_audience' => is_array($course->target_audience) ? $course->target_audience : [],
+        ]);
     }
 
     public function deleteCourse(Course $course): JsonResponse
@@ -375,9 +400,15 @@ class AdminController extends Controller
 
     public function showCourse(Course $course)
     {
-        return response()->json($course->load('sections.lessons'));
-    }
+        $course->load('sections.lessons');
 
+        return response()->json([
+            ...$course->toArray(),
+            'what_you_learn'  => is_array($course->what_you_learn)  ? $course->what_you_learn  : [],
+            'requirements'    => is_array($course->requirements)    ? $course->requirements    : [],
+            'target_audience' => is_array($course->target_audience) ? $course->target_audience : [],
+        ]);
+    }
     public function showInstructor(int $id): JsonResponse
     {
         $ins = Instructor::with([
@@ -418,6 +449,9 @@ class AdminController extends Controller
                 'total_duration' => $c->total_duration,
                 'rating'         => $c->rating ?? 0,
                 'students_count' => $c->enrollments_count ?? 0,
+                'what_you_learn'  => $course->what_you_learn  ?? [],
+                'requirements'    => $course->requirements    ?? [],
+                'target_audience' => $course->target_audience ?? [],
             ]),
         ]);
     }
