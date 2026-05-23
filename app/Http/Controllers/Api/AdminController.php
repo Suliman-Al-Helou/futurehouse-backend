@@ -94,9 +94,17 @@ class AdminController extends Controller
         ]);
 
         $course = Course::create($request->only([
-            'title', 'description', 'level', 'status',
-            'total_duration', 'what_you_learn', 'cover_image',
-            'instructor_name', 'rating', 'is_popular', 'price',
+            'title',
+            'description',
+            'level',
+            'status',
+            'total_duration',
+            'what_you_learn',
+            'cover_image',
+            'instructor_name',
+            'rating',
+            'is_popular',
+            'price',
         ]));
 
         return response()->json($course, 201);
@@ -105,9 +113,17 @@ class AdminController extends Controller
     public function updateCourse(Request $request, Course $course)
     {
         $course->update($request->only([
-            'title', 'description', 'level', 'status',
-            'total_duration', 'what_you_learn', 'cover_image',
-            'instructor_name', 'rating', 'is_popular', 'price',
+            'title',
+            'description',
+            'level',
+            'status',
+            'total_duration',
+            'what_you_learn',
+            'cover_image',
+            'instructor_name',
+            'rating',
+            'is_popular',
+            'price',
         ]));
 
         return response()->json($course);
@@ -131,7 +147,11 @@ class AdminController extends Controller
         ]);
 
         $lesson = $section->lessons()->create($request->only([
-            'title', 'video_id', 'duration', 'order', 'is_preview',
+            'title',
+            'video_id',
+            'duration',
+            'order',
+            'is_preview',
         ]));
 
         return response()->json($lesson, 201);
@@ -140,7 +160,11 @@ class AdminController extends Controller
     public function updateLesson(Request $request, Lesson $lesson): JsonResponse
     {
         $lesson->update($request->only([
-            'title', 'video_id', 'duration', 'order', 'is_preview',
+            'title',
+            'video_id',
+            'duration',
+            'order',
+            'is_preview',
         ]));
 
         return response()->json($lesson);
@@ -238,32 +262,108 @@ class AdminController extends Controller
 
     public function instructors(): JsonResponse
     {
-        return response()->json(Instructor::orderBy('created_at', 'desc')->get());
+        $instructors = Instructor::withCount('courses')->get()->map(fn($ins) => [
+            'id'               => $ins->id,
+            'name'             => $ins->name,
+            'title'            => $ins->title,
+            'bio'              => $ins->bio,
+            'avatar_url'       => $ins->avatar_url,
+            'cover_url'        => $ins->cover_url,
+            'specializations'  => $ins->specializations,
+            'years_experience' => $ins->years_experience,
+            'rating'           => $ins->rating,
+            'total_reviews'    => $ins->total_reviews,
+            'students_count'   => $ins->students_count,
+            'achievements'     => $ins->achievements ?? [],
+            'twitter'          => $ins->twitter,
+            'linkedin'         => $ins->linkedin,
+            'youtube'          => $ins->youtube,
+            'courses_count'    => $ins->courses_count,
+        ]);
+
+        return response()->json($instructors);
     }
 
+    // ─── إضافة مدرب ───────────────────────────────────────────────
     public function storeInstructor(Request $request): JsonResponse
     {
-        $instructor = Instructor::create($request->only([
-            'name', 'title', 'bio', 'avatar_url', 'specializations', 'years_experience',
-        ]));
+        $validated = $request->validate([
+            'name'             => 'required|string|max:255',
+            'title'            => 'nullable|string|max:255',
+            'bio'              => 'nullable|string',
+            'avatar_url'       => 'nullable|string',
+            'cover_url'        => 'nullable|string',
+            'specializations'  => 'nullable|string',
+            'years_experience' => 'nullable|integer|min:0',
+            'rating'           => 'nullable|numeric|min:0|max:5',
+            'total_reviews'    => 'nullable|integer|min:0',
+            'students_count'   => 'nullable|integer|min:0',
+            'achievements'     => 'nullable|array',
+            'achievements.*'   => 'string',
+            'twitter'          => 'nullable|string',
+            'linkedin'         => 'nullable|string',
+            'youtube'          => 'nullable|string',
+            'courses'          => 'nullable|array',
+            'courses.*'        => 'integer|exists:courses,id',
+        ]);
+
+        $instructor = Instructor::create($validated);
+
+        // ربط الكورسات: نحدّث instructor_id في جدول courses
+        if (!empty($validated['courses'])) {
+            Course::whereIn('id', $validated['courses'])
+                ->update(['instructor_id' => $instructor->id]);
+        }
 
         return response()->json($instructor, 201);
     }
 
+    // ─── تعديل مدرب ───────────────────────────────────────────────
     public function updateInstructor(Request $request, Instructor $instructor): JsonResponse
     {
-        $instructor->update($request->only([
-            'name', 'title', 'bio', 'avatar_url', 'specializations', 'years_experience',
-        ]));
+        $validated = $request->validate([
+            'name'             => 'sometimes|string|max:255',
+            'title'            => 'nullable|string|max:255',
+            'bio'              => 'nullable|string',
+            'avatar_url'       => 'nullable|string',
+            'cover_url'        => 'nullable|string',
+            'specializations'  => 'nullable|string',
+            'years_experience' => 'nullable|integer|min:0',
+            'rating'           => 'nullable|numeric|min:0|max:5',
+            'total_reviews'    => 'nullable|integer|min:0',
+            'students_count'   => 'nullable|integer|min:0',
+            'achievements'     => 'nullable|array',
+            'achievements.*'   => 'string',
+            'twitter'          => 'nullable|string',
+            'linkedin'         => 'nullable|string',
+            'youtube'          => 'nullable|string',
+            'courses'          => 'nullable|array',
+            'courses.*'        => 'integer|exists:courses,id',
+        ]);
 
-        return response()->json($instructor);
+        $instructor->update($validated);
+
+        // تحديث الكورسات المرتبطة:
+        // 1. افصل الكورسات القديمة التابعة لهذا المدرب
+        Course::where('instructor_id', $instructor->id)->update(['instructor_id' => null]);
+        // 2. اربط الكورسات الجديدة
+        if (!empty($validated['courses'])) {
+            Course::whereIn('id', $validated['courses'])
+                ->update(['instructor_id' => $instructor->id]);
+        }
+
+        return response()->json($instructor->fresh());
     }
 
+
+    // ─── حذف مدرب ─────────────────────────────────────────────────
     public function deleteInstructor(Instructor $instructor): JsonResponse
     {
+        // فك الربط مع الكورسات قبل الحذف
+        Course::where('instructor_id', $instructor->id)->update(['instructor_id' => null]);
         $instructor->delete();
 
-        return response()->json(['message' => 'تم الحذف']);
+        return response()->json(['message' => 'تم حذف المدرب بنجاح']);
     }
 
     public function showCourse(Course $course)
@@ -273,8 +373,45 @@ class AdminController extends Controller
 
     public function showInstructor(int $id): JsonResponse
     {
-        $instructor = Instructor::with('courses')->findOrFail($id);
+        $ins = Instructor::with([
+            'courses' => fn($q) =>
+            $q->select(
+                'courses.id',
+                'title',
+                'cover_image',
+                'level',
+                'total_duration',
+                'rating',
+                'instructor_id'
+            )
+                ->withCount('enrollments')
+        ])->findOrFail($id);
 
-        return response()->json($instructor);
+        return response()->json([
+            'id'               => $ins->id,
+            'name'             => $ins->name,
+            'title'            => $ins->title,
+            'bio'              => $ins->bio,
+            'avatar_url'       => $ins->avatar_url,
+            'cover_url'        => $ins->cover_url,
+            'specializations'  => $ins->specializations,
+            'years_experience' => $ins->years_experience,
+            'rating'           => $ins->rating,
+            'total_reviews'    => $ins->total_reviews,
+            'students_count'   => $ins->students_count,
+            'achievements'     => $ins->achievements ?? [],
+            'twitter'          => $ins->twitter,
+            'linkedin'         => $ins->linkedin,
+            'youtube'          => $ins->youtube,
+            'courses'          => $ins->courses->map(fn($c) => [
+                'id'             => $c->id,
+                'title'          => $c->title,
+                'cover_image'    => $c->cover_image,
+                'level'          => $c->level,
+                'total_duration' => $c->total_duration,
+                'rating'         => $c->rating ?? 0,
+                'students_count' => $c->enrollments_count ?? 0,
+            ]),
+        ]);
     }
 }

@@ -17,6 +17,9 @@ return new class extends Migration
         $table->decimal('rating', 3, 1)->default(4.5);
         $table->integer('total_reviews')->default(0);
         $table->integer('students_count')->default(0);
+                $table->string('twitter')->nullable();
+        $table->string('linkedin')->nullable();
+        $table->string('youtube')->nullable();
     });
 }
 
