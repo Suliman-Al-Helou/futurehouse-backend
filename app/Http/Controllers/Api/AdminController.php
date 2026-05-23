@@ -86,6 +86,8 @@ class AdminController extends Controller
             'status' => 'required|in:draft,published,coming_soon',
             'total_duration' => 'nullable|integer',
             'what_you_learn' => 'nullable|array',
+            'requirements'    => 'nullable|array',
+            'target_audience' => 'nullable|array',
             'cover_image' => 'nullable|string',
             'instructor_name' => 'nullable|string',
             'rating' => 'nullable|numeric|min:0|max:5',
@@ -100,6 +102,9 @@ class AdminController extends Controller
             'status',
             'total_duration',
             'what_you_learn',
+            
+            'requirements',       // 👈 أضف
+            'target_audience',
             'cover_image',
             'instructor_name',
             'rating',
@@ -119,6 +124,8 @@ class AdminController extends Controller
             'status',
             'total_duration',
             'what_you_learn',
+             'requirements',       // 👈 أضف
+    'target_audience',
             'cover_image',
             'instructor_name',
             'rating',
