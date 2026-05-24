@@ -12,6 +12,7 @@ use App\Models\Task;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use App\Models\Faq;
 
 class AdminController extends Controller
 {
@@ -50,7 +51,7 @@ public function courses(): JsonResponse
             'total_duration'   => $course->total_duration,
 'requirements'    => json_decode($course->getRawOriginal('requirements'), true) ?? [],
 'target_audience' => json_decode($course->getRawOriginal('target_audience'), true) ?? [],
-'what_you_learn'  => json_decode($course->getRawOriginal('what_you_learn'), true) ?? [],
+'what_you_learn'  => json_decode($course->getRawOriginal('what_you_learn'), true) ?? [],    
             'students_count'   => $course->students_count,
             'instructor_name'  => $course->instructor_name,
             'rating'           => $course->rating,
@@ -455,4 +456,43 @@ public function courses(): JsonResponse
             ]),
         ]);
     }
+    // ─── قائمة الأسئلة الشائعة (Public + Admin) ────────────
+public function faqs(): JsonResponse
+{
+    $faqs = Faq::orderBy('order')->orderBy('id')->get();
+    return response()->json($faqs);
+}
+ 
+// ─── إضافة سؤال ────────────────────────────────────────
+public function storeFaq(Request $request): JsonResponse
+{
+    $validated = $request->validate([
+        'question' => 'required|string|max:500',
+        'answer'   => 'required|string',
+        'order'    => 'nullable|integer',
+    ]);
+ 
+    $faq = Faq::create($validated);
+    return response()->json($faq, 201);
+}
+ 
+// ─── تعديل سؤال ────────────────────────────────────────
+public function updateFaq(Request $request, Faq $faq): JsonResponse
+{
+    $validated = $request->validate([
+        'question' => 'sometimes|string|max:500',
+        'answer'   => 'sometimes|string',
+        'order'    => 'nullable|integer',
+    ]);
+ 
+    $faq->update($validated);
+    return response()->json($faq);
+}
+ 
+// ─── حذف سؤال ──────────────────────────────────────────
+public function deleteFaq(Faq $faq): JsonResponse
+{
+    $faq->delete();
+    return response()->json(['message' => 'تم حذف السؤال بنجاح']);
+}
 }

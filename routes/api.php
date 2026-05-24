@@ -26,6 +26,7 @@ Route::get('/courses', [CourseController::class, 'index']);
 Route::get('/courses/{course}', [CourseController::class, 'show']);
 Route::get('/instructors', [AdminController::class, 'instructors']);
 Route::get('/instructors/{id}', [AdminController::class, 'showInstructor']); 
+Route::get('/faqs', [AdminController::class, 'faqs']);
 // ─── Protected ────────────────────────────────────────────
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
@@ -79,4 +80,11 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::get('/instructors/{id}', [AdminController::class, 'showInstructor']);
     Route::put('/instructors/{instructor}', [AdminController::class, 'updateInstructor']);
     Route::delete('/instructors/{instructor}', [AdminController::class, 'deleteInstructor']);
+    // FAQs
+Route::get('/faqs',          [AdminController::class, 'faqs']);
+Route::post('/faqs',         [AdminController::class, 'storeFaq']);
+Route::put('/faqs/{faq}',    [AdminController::class, 'updateFaq']);
+Route::delete('/faqs/{faq}', [AdminController::class, 'deleteFaq']);
+ 
 });
+
