@@ -23,7 +23,7 @@ class DashboardController extends Controller
         $enrolledCount   = $enrollments->count();
         $completedCount  = $enrollments->where('status', 'completed')->count();
 
-        // ساعات التعلم (الدروس المكتملة × متوسط 30 دقيقة)
+        // ساعات التعلم
         $completedLessons = UserLessonProgress::where('user_id', $user->id)
             ->where('completed', true)
             ->count();
@@ -47,12 +47,38 @@ class DashboardController extends Controller
             ? round(($taskAttempts->where('passed', true)->count() / $taskAttempts->count()) * 100)
             : 0;
 
+        // حساب الأيام المتواصلة
+        $progressDates = UserLessonProgress::where('user_id', $user->id)
+            ->where('completed', true)
+            ->orderBy('updated_at', 'desc')
+            ->pluck('updated_at')
+            ->map(fn($date) => $date->format('Y-m-d'))
+            ->unique()
+            ->values();
+
+        $streak = 0;
+        $today = now()->format('Y-m-d');
+        $yesterday = now()->subDay()->format('Y-m-d');
+
+        if ($progressDates->contains($today) || $progressDates->contains($yesterday)) {
+            $checkDate = $progressDates->contains($today) ? now() : now()->subDay();
+            foreach ($progressDates as $date) {
+                if ($date === $checkDate->format('Y-m-d')) {
+                    $streak++;
+                    $checkDate->subDay();
+                } else {
+                    break;
+                }
+            }
+        }
+
         return response()->json([
             'stats' => [
                 'enrolled_courses'  => $enrolledCount,
                 'completed_lessons' => $completedLessons,
                 'learning_hours'    => $learningHours,
                 'completed_courses' => $completedCount,
+                'streak'            => $streak,
             ],
             'exam_results' => $taskAttempts,
             'pass_rate'    => $passRate,
