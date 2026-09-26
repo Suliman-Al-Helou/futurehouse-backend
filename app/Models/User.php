@@ -2,22 +2,25 @@
 
 namespace App\Models;
 
+use App\Notifications\ResetPasswordNotification;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
-use App\Notifications\ResetPasswordNotification;
+
 class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
-    protected $fillable = ['name', 'email', 'password','role'];
+    protected $fillable = ['name', 'email', 'password', 'role'];
+
+    protected $guarded = ['role', 'id']; // role ما بينعبّى إلا صراحة بالكود، مش من request
 
     protected $hidden = ['password', 'remember_token'];
 
     protected $casts = [
         'email_verified_at' => 'datetime',
-        'password'          => 'hashed',
+        'password' => 'hashed',
     ];
 
     // الكورسات المسجل فيها
@@ -37,8 +40,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(TaskAttempt::class);
     }
+
     public function sendPasswordResetNotification($token): void
-{
-    $this->notify(new ResetPasswordNotification($token));
-}
+    {
+        $this->notify(new ResetPasswordNotification($token));
+    }
 }
