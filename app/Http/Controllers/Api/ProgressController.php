@@ -3,11 +3,12 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Course;
 use App\Models\Lesson;
 use App\Models\UserLessonProgress;
-use App\Models\TaskAttempt;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 
 class ProgressController extends Controller
 {
@@ -19,36 +20,33 @@ class ProgressController extends Controller
     {
         $request->validate([
             'watched_percent' => 'required|numeric|min:0|max:100',
-            'last_position'   => 'required|numeric|min:0',
+            'last_position' => 'required|numeric|min:0',
         ]);
 
         $lesson = Lesson::findOrFail($lessonId);
-        $user   = Auth::user();
+        $user = Auth::user();
 
-        // تحقق أن المستخدم مسجل في الكورس
-        $section  = $lesson->section;
-        $courseId = $section->course_id;
-        $enrolled = $user->enrollments()->where('course_id', $courseId)->exists();
+        Gate::authorize('watchLesson', [$lesson->getCourse(), $lesson]);
+        
+        $existing = UserLessonProgress::where('user_id', $user->id)
+            ->where('lesson_id', $lesson->id)
+            ->first();
 
-        if (!$enrolled) {
-            return response()->json(['message' => 'غير مشترك في هذا الكورس'], 403);
-        }
-
-        $percent = (float) $request->watched_percent;
+        $best = max((float) $request->watched_percent, $existing?->watched_percent ?? 0);
 
         $progress = UserLessonProgress::updateOrCreate(
             ['user_id' => $user->id, 'lesson_id' => $lesson->id],
             [
-                'watched_percent' => $percent,
-                'last_position'   => $request->last_position,
-                'completed'       => $percent >= 80,
+                'watched_percent' => $best,
+                'last_position' => $request->last_position,
+                'completed' => $best >= 80,
             ]
         );
 
         return response()->json([
             'watched_percent' => $progress->watched_percent,
-            'completed'       => $progress->completed,
-            'task_unlocked'   => $progress->completed,
+            'completed' => $progress->completed,
+            'task_unlocked' => $progress->completed,
         ]);
     }
 
@@ -58,15 +56,15 @@ class ProgressController extends Controller
      */
     public function show($lessonId)
     {
-        $user     = Auth::user();
+        $user = Auth::user();
         $progress = UserLessonProgress::where('user_id', $user->id)
             ->where('lesson_id', $lessonId)
             ->first();
 
         return response()->json([
             'watched_percent' => $progress?->watched_percent ?? 0,
-            'last_position'   => $progress?->last_position ?? 0,
-            'completed'       => $progress?->completed ?? false,
+            'last_position' => $progress?->last_position ?? 0,
+            'completed' => $progress?->completed ?? false,
         ]);
     }
 
@@ -74,17 +72,19 @@ class ProgressController extends Controller
      * GET /api/courses/{id}/progress-summary
      * ملخص تقدم المستخدم في كورس كامل
      */
-    public function courseSummary($courseId)
+    public function courseSummary(Course $course)
     {
+        Gate::authorize('watch', $course);
+
         $user = Auth::user();
 
         $enrolled = $user->enrollments()->where('course_id', $courseId)->exists();
-        if (!$enrolled) {
+        if (! $enrolled) {
             return response()->json(['message' => 'غير مشترك'], 403);
         }
 
         // جلب كل دروس الكورس
-        $lessonIds = Lesson::whereHas('section', fn($q) => $q->where('course_id', $courseId))
+        $lessonIds = Lesson::whereHas('section', fn ($q) => $q->where('course_id', $courseId))
             ->pluck('id');
 
         $completedCount = UserLessonProgress::where('user_id', $user->id)
@@ -98,9 +98,9 @@ class ProgressController extends Controller
             : 0;
 
         return response()->json([
-            'total_lessons'   => $totalLessons,
+            'total_lessons' => $totalLessons,
             'completed_count' => $completedCount,
-            'percent'         => $percent,
+            'percent' => $percent,
             'course_complete' => $percent === 100,
         ]);
     }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Course;
 use App\Models\Enrollment;
+use App\Models\Faq;
 use App\Models\Instructor;
 use App\Models\Lesson;
 use App\Models\Section;
@@ -12,10 +13,22 @@ use App\Models\Task;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use App\Models\Faq;
 
 class AdminController extends Controller
 {
+    private function clearCoursesCache(): void
+    {
+        foreach (['all', 'beginner', 'intermediate', 'advanced'] as $level) {
+            Cache::forget("courses:published:$level");
+        }
+    }
+
+    private const ENROLLMENT_TRANSITIONS = [
+        'pending' => ['approved', 'rejected'],
+        'approved' => ['rejected'],   // سحب الوصول
+        'rejected' => [],             // الطالب هو اللي بيعيد الطلب (pending)
+    ];
+
     public function users(): JsonResponse
     {
         $users = User::where('role', '!=', 'admin')
@@ -36,35 +49,37 @@ class AdminController extends Controller
 
         return response()->json($students);
     }
-public function courses(): JsonResponse
-{
-    $courses = Course::withCount('enrollments')
-        ->orderBy('created_at', 'desc')
-        ->get()
-        ->map(fn($course) => [
-            'id'               => $course->id,
-            'title'            => $course->title,
-            'description'      => $course->description,
-            'cover_image'      => $course->cover_image,
-            'level'            => $course->level,
-            'status'           => $course->status,
-            'total_duration'   => $course->total_duration,
-'requirements'    => json_decode($course->getRawOriginal('requirements'), true) ?? [],
-'target_audience' => json_decode($course->getRawOriginal('target_audience'), true) ?? [],
-'what_you_learn'  => json_decode($course->getRawOriginal('what_you_learn'), true) ?? [],    
-            'students_count'   => $course->students_count,
-            'instructor_name'  => $course->instructor_name,
-            'rating'           => $course->rating,
-            'is_popular'       => $course->is_popular,
-            'price'            => $course->price,
-            'instructor_id'    => $course->instructor_id,
-            'enrollments_count'=> $course->enrollments_count,
-            'created_at'       => $course->created_at,
-            'updated_at'       => $course->updated_at,
-        ]);
 
-    return response()->json($courses);
-}
+    public function courses(): JsonResponse
+    {
+        $courses = Course::withCount(['enrollments', 'enrollments as approved_count' => fn ($q) => $q->where('status', 'approved')])
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(fn ($course) => [
+                'id' => $course->id,
+                'title' => $course->title,
+                'description' => $course->description,
+                'cover_image' => $course->cover_image,
+                'level' => $course->level,
+                'status' => $course->status,
+                'total_duration' => $course->total_duration,
+                'requirements' => json_decode($course->getRawOriginal('requirements'), true) ?? [],
+                'target_audience' => json_decode($course->getRawOriginal('target_audience'), true) ?? [],
+                'what_you_learn' => json_decode($course->getRawOriginal('what_you_learn'), true) ?? [],
+                'students_count' => $course->approved_count,
+                'instructor_name' => $course->instructor_name,
+                'rating' => $course->rating,
+                'is_popular' => $course->is_popular,
+                'price' => $course->price,
+                'instructor_id' => $course->instructor_id,
+                'is_public' => $course->is_public,
+                'enrollments_count' => $course->enrollments_count,
+                'created_at' => $course->created_at,
+                'updated_at' => $course->updated_at,
+            ]);
+
+        return response()->json($courses);
+    }
 
     public function stats(): JsonResponse
     {
@@ -86,13 +101,24 @@ public function courses(): JsonResponse
 
     public function updateEnrollment(Request $request, Enrollment $enrollment): JsonResponse
     {
-        $request->validate([
-            'status' => 'required|in:pending,approved,rejected',
+        $validated = $request->validate([
+            'status' => 'required|in:approved,rejected',
         ]);
 
-        $enrollment->update(['status' => $request->status]);
+        $allowed = self::ENROLLMENT_TRANSITIONS[$enrollment->status] ?? [];
+        if (! in_array($validated['status'], $allowed, true)) {
+            return response()->json([
+                'message' => "لا يمكن نقل الطلب من {$enrollment->status} إلى {$validated['status']}",
+            ], 422);
+        }
+        if ($enrollment->course->isFree()) {
+            return response()->json([
+                'message' => 'هذا الكورس مجاني ولا يحتاج موافقة',
+            ], 422);
+        }
 
-        return response()->json([
+$enrollment->update(['status' => $request->status]);
+$this->clearCoursesCache();        return response()->json([
             'message' => 'تم تحديث حالة التسجيل',
             'enrollment' => $enrollment,
         ]);
@@ -100,64 +126,57 @@ public function courses(): JsonResponse
 
     public function storeCourse(Request $request): JsonResponse
     {
-        $request->validate([
+        $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'required|string',
             'level' => 'required|in:beginner,intermediate,advanced',
             'status' => 'required|in:draft,published,coming_soon',
             'total_duration' => 'nullable|integer',
             'what_you_learn' => 'nullable|array',
-            'requirements'    => 'nullable|array',
+            'requirements' => 'nullable|array',
             'target_audience' => 'nullable|array',
             'cover_image' => 'nullable|string',
             'instructor_name' => 'nullable|string',
             'rating' => 'nullable|numeric|min:0|max:5',
             'is_popular' => 'nullable|boolean',
             'price' => 'nullable|numeric|min:0',
-        ]);
+            'is_public' => 'sometimes|boolean',
+            'instructor_id' => 'nullable|integer|exists:instructors,id',
 
-        $course = Course::create($request->only([
-            'title',
-            'description',
-            'level',
-            'status',
-            'total_duration',
-            'what_you_learn',
-            'requirements',       // 👈 أضف
-            'target_audience',
-            'cover_image',
-            'instructor_name',
-            'rating',
-            'is_popular',
-            'price',
-        ]));
+        ]);
+        $course = Course::create($validated);
+        $this->clearCoursesCache();
 
         return response()->json($course, 201);
     }
 
     public function updateCourse(Request $request, Course $course)
     {
-        $course->update($request->only([
-            'title',
-            'description',
-            'level',
-            'status',
-            'total_duration',
-            'what_you_learn',
-            'requirements',       // 👈 أضف
-            'target_audience',
-            'cover_image',
-            'instructor_name',
-            'rating',
-            'is_popular',
-            'price',
-        ]));
+        $validated = $request->validate([
+            'title' => 'sometimes|required|string|max:255',
+            'description' => 'sometimes|required|string',
+            'level' => 'sometimes|required|in:beginner,intermediate,advanced',
+            'status' => 'sometimes|required|in:draft,published,coming_soon',
+            'total_duration' => 'nullable|integer',
+            'what_you_learn' => 'nullable|array',
+            'requirements' => 'nullable|array',
+            'target_audience' => 'nullable|array',
+            'cover_image' => 'nullable|string',
+            'instructor_name' => 'nullable|string',
+            'rating' => 'nullable|numeric|min:0|max:5',
+            'is_popular' => 'nullable|boolean',
+            'price' => 'nullable|numeric|min:0',
+            'is_public' => 'sometimes|boolean',
+            'instructor_id' => 'nullable|integer|exists:instructors,id',
+        ]);
+        $course->update($validated);
         $course->refresh();
+        $this->clearCoursesCache();
 
         return response()->json([
             ...$course->toArray(),
-            'what_you_learn'  => is_array($course->what_you_learn)  ? $course->what_you_learn  : [],
-            'requirements'    => is_array($course->requirements)    ? $course->requirements    : [],
+            'what_you_learn' => is_array($course->what_you_learn) ? $course->what_you_learn : [],
+            'requirements' => is_array($course->requirements) ? $course->requirements : [],
             'target_audience' => is_array($course->target_audience) ? $course->target_audience : [],
         ]);
     }
@@ -165,6 +184,7 @@ public function courses(): JsonResponse
     public function deleteCourse(Course $course): JsonResponse
     {
         $course->delete();
+        $this->clearCoursesCache();
 
         return response()->json(['message' => 'تم حذف الكورس']);
     }
@@ -295,23 +315,23 @@ public function courses(): JsonResponse
 
     public function instructors(): JsonResponse
     {
-        $instructors = Instructor::withCount('courses')->get()->map(fn($ins) => [
-            'id'               => $ins->id,
-            'name'             => $ins->name,
-            'title'            => $ins->title,
-            'bio'              => $ins->bio,
-            'avatar_url'       => $ins->avatar_url,
-            'cover_url'        => $ins->cover_url,
-            'specializations'  => $ins->specializations,
+        $instructors = Instructor::withCount('courses')->get()->map(fn ($ins) => [
+            'id' => $ins->id,
+            'name' => $ins->name,
+            'title' => $ins->title,
+            'bio' => $ins->bio,
+            'avatar_url' => $ins->avatar_url,
+            'cover_url' => $ins->cover_url,
+            'specializations' => $ins->specializations,
             'years_experience' => $ins->years_experience,
-            'rating'           => $ins->rating,
-            'total_reviews'    => $ins->total_reviews,
-            'students_count'   => $ins->students_count,
-            'achievements'     => $ins->achievements ?? [],
-            'twitter'          => $ins->twitter,
-            'linkedin'         => $ins->linkedin,
-            'youtube'          => $ins->youtube,
-            'courses_count'    => $ins->courses_count,
+            'rating' => $ins->rating,
+            'total_reviews' => $ins->total_reviews,
+            'students_count' => $ins->students_count,
+            'achievements' => $ins->achievements ?? [],
+            'twitter' => $ins->twitter,
+            'linkedin' => $ins->linkedin,
+            'youtube' => $ins->youtube,
+            'courses_count' => $ins->courses_count,
         ]);
 
         return response()->json($instructors);
@@ -321,29 +341,29 @@ public function courses(): JsonResponse
     public function storeInstructor(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'name'             => 'required|string|max:255',
-            'title'            => 'nullable|string|max:255',
-            'bio'              => 'nullable|string',
-            'avatar_url'       => 'nullable|string',
-            'cover_url'        => 'nullable|string',
-            'specializations'  => 'nullable|string',
+            'name' => 'required|string|max:255',
+            'title' => 'nullable|string|max:255',
+            'bio' => 'nullable|string',
+            'avatar_url' => 'nullable|string',
+            'cover_url' => 'nullable|string',
+            'specializations' => 'nullable|string',
             'years_experience' => 'nullable|integer|min:0',
-            'rating'           => 'nullable|numeric|min:0|max:5',
-            'total_reviews'    => 'nullable|integer|min:0',
-            'students_count'   => 'nullable|integer|min:0',
-            'achievements'     => 'nullable|array',
-            'achievements.*'   => 'string',
-            'twitter'          => 'nullable|string',
-            'linkedin'         => 'nullable|string',
-            'youtube'          => 'nullable|string',
-            'courses'          => 'nullable|array',
-            'courses.*'        => 'integer|exists:courses,id',
+            'rating' => 'nullable|numeric|min:0|max:5',
+            'total_reviews' => 'nullable|integer|min:0',
+            'students_count' => 'nullable|integer|min:0',
+            'achievements' => 'nullable|array',
+            'achievements.*' => 'string',
+            'twitter' => 'nullable|string',
+            'linkedin' => 'nullable|string',
+            'youtube' => 'nullable|string',
+            'courses' => 'nullable|array',
+            'courses.*' => 'integer|exists:courses,id',
         ]);
 
         $instructor = Instructor::create($validated);
 
         // ربط الكورسات: نحدّث instructor_id في جدول courses
-        if (!empty($validated['courses'])) {
+        if (! empty($validated['courses'])) {
             Course::whereIn('id', $validated['courses'])
                 ->update(['instructor_id' => $instructor->id]);
         }
@@ -355,23 +375,23 @@ public function courses(): JsonResponse
     public function updateInstructor(Request $request, Instructor $instructor): JsonResponse
     {
         $validated = $request->validate([
-            'name'             => 'sometimes|string|max:255',
-            'title'            => 'nullable|string|max:255',
-            'bio'              => 'nullable|string',
-            'avatar_url'       => 'nullable|string',
-            'cover_url'        => 'nullable|string',
-            'specializations'  => 'nullable|string',
+            'name' => 'sometimes|string|max:255',
+            'title' => 'nullable|string|max:255',
+            'bio' => 'nullable|string',
+            'avatar_url' => 'nullable|string',
+            'cover_url' => 'nullable|string',
+            'specializations' => 'nullable|string',
             'years_experience' => 'nullable|integer|min:0',
-            'rating'           => 'nullable|numeric|min:0|max:5',
-            'total_reviews'    => 'nullable|integer|min:0',
-            'students_count'   => 'nullable|integer|min:0',
-            'achievements'     => 'nullable|array',
-            'achievements.*'   => 'string',
-            'twitter'          => 'nullable|string',
-            'linkedin'         => 'nullable|string',
-            'youtube'          => 'nullable|string',
-            'courses'          => 'nullable|array',
-            'courses.*'        => 'integer|exists:courses,id',
+            'rating' => 'nullable|numeric|min:0|max:5',
+            'total_reviews' => 'nullable|integer|min:0',
+            'students_count' => 'nullable|integer|min:0',
+            'achievements' => 'nullable|array',
+            'achievements.*' => 'string',
+            'twitter' => 'nullable|string',
+            'linkedin' => 'nullable|string',
+            'youtube' => 'nullable|string',
+            'courses' => 'nullable|array',
+            'courses.*' => 'integer|exists:courses,id',
         ]);
 
         $instructor->update($validated);
@@ -380,14 +400,13 @@ public function courses(): JsonResponse
         // 1. افصل الكورسات القديمة التابعة لهذا المدرب
         Course::where('instructor_id', $instructor->id)->update(['instructor_id' => null]);
         // 2. اربط الكورسات الجديدة
-        if (!empty($validated['courses'])) {
+        if (! empty($validated['courses'])) {
             Course::whereIn('id', $validated['courses'])
                 ->update(['instructor_id' => $instructor->id]);
         }
 
         return response()->json($instructor->fresh());
     }
-
 
     // ─── حذف مدرب ─────────────────────────────────────────────────
     public function deleteInstructor(Instructor $instructor): JsonResponse
@@ -405,16 +424,16 @@ public function courses(): JsonResponse
 
         return response()->json([
             ...$course->toArray(),
-            'what_you_learn'  => is_array($course->what_you_learn)  ? $course->what_you_learn  : [],
-            'requirements'    => is_array($course->requirements)    ? $course->requirements    : [],
+            'what_you_learn' => is_array($course->what_you_learn) ? $course->what_you_learn : [],
+            'requirements' => is_array($course->requirements) ? $course->requirements : [],
             'target_audience' => is_array($course->target_audience) ? $course->target_audience : [],
         ]);
     }
+
     public function showInstructor(int $id): JsonResponse
     {
         $ins = Instructor::with([
-            'courses' => fn($q) =>
-            $q->select(
+            'courses' => fn ($q) => $q->select(
                 'courses.id',
                 'title',
                 'cover_image',
@@ -422,77 +441,81 @@ public function courses(): JsonResponse
                 'total_duration',
                 'rating',
                 'instructor_id'
-            )
-                ->withCount('enrollments')
+            )->withCount(['enrollments as approved_count' => fn ($e) => $e->where('status', 'approved')]),
         ])->findOrFail($id);
 
         return response()->json([
-            'id'               => $ins->id,
-            'name'             => $ins->name,
-            'title'            => $ins->title,
-            'bio'              => $ins->bio,
-            'avatar_url'       => $ins->avatar_url,
-            'cover_url'        => $ins->cover_url,
-            'specializations'  => $ins->specializations,
+            'id' => $ins->id,
+            'name' => $ins->name,
+            'title' => $ins->title,
+            'bio' => $ins->bio,
+            'avatar_url' => $ins->avatar_url,
+            'cover_url' => $ins->cover_url,
+            'specializations' => $ins->specializations,
             'years_experience' => $ins->years_experience,
-            'rating'           => $ins->rating,
-            'total_reviews'    => $ins->total_reviews,
-            'students_count'   => $ins->students_count,
-            'achievements'     => $ins->achievements ?? [],
-            'twitter'          => $ins->twitter,
-            'linkedin'         => $ins->linkedin,
-            'youtube'          => $ins->youtube,
-            'courses'          => $ins->courses->map(fn($c) => [
-                'id'             => $c->id,
-                'title'          => $c->title,
-                'cover_image'    => $c->cover_image,
-                'level'          => $c->level,
-                'total_duration' => $c->total_duration,
-                'rating'         => $c->rating ?? 0,
-                'students_count' => $c->enrollments_count ?? 0,
-                'what_you_learn'  => $course->what_you_learn  ?? [],
-                'requirements'    => $course->requirements    ?? [],
+            'rating' => $ins->rating,
+            'total_reviews' => $ins->total_reviews,
+            'students_count' => $ins->students_count,
+            'achievements' => $ins->achievements ?? [],
+            'twitter' => $ins->twitter,
+            'linkedin' => $ins->linkedin,
+            'youtube' => $ins->youtube,
+            'courses' => $ins->courses->map(fn ($course) => [
+                'id' => $course->id,
+                'title' => $course->title,
+                'cover_image' => $course->cover_image,
+                'level' => $course->level,
+                'total_duration' => $course->total_duration,
+                'rating' => $course->rating ?? 0,
+                'students_count' => $course->approved_count ?? 0,
+                'what_you_learn' => $course->what_you_learn ?? [],
+                'requirements' => $course->requirements ?? [],
                 'target_audience' => $course->target_audience ?? [],
             ]),
         ]);
     }
+
     // ─── قائمة الأسئلة الشائعة (Public + Admin) ────────────
-public function faqs(): JsonResponse
-{
-    $faqs = Faq::orderBy('order')->orderBy('id')->get();
-    return response()->json($faqs);
-}
- 
-// ─── إضافة سؤال ────────────────────────────────────────
-public function storeFaq(Request $request): JsonResponse
-{
-    $validated = $request->validate([
-        'question' => 'required|string|max:500',
-        'answer'   => 'required|string',
-        'order'    => 'nullable|integer',
-    ]);
- 
-    $faq = Faq::create($validated);
-    return response()->json($faq, 201);
-}
- 
-// ─── تعديل سؤال ────────────────────────────────────────
-public function updateFaq(Request $request, Faq $faq): JsonResponse
-{
-    $validated = $request->validate([
-        'question' => 'sometimes|string|max:500',
-        'answer'   => 'sometimes|string',
-        'order'    => 'nullable|integer',
-    ]);
- 
-    $faq->update($validated);
-    return response()->json($faq);
-}
- 
-// ─── حذف سؤال ──────────────────────────────────────────
-public function deleteFaq(Faq $faq): JsonResponse
-{
-    $faq->delete();
-    return response()->json(['message' => 'تم حذف السؤال بنجاح']);
-}
+    public function faqs(): JsonResponse
+    {
+        $faqs = Faq::orderBy('order')->orderBy('id')->get();
+
+        return response()->json($faqs);
+    }
+
+    // ─── إضافة سؤال ────────────────────────────────────────
+    public function storeFaq(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'question' => 'required|string|max:500',
+            'answer' => 'required|string',
+            'order' => 'nullable|integer',
+        ]);
+
+        $faq = Faq::create($validated);
+
+        return response()->json($faq, 201);
+    }
+
+    // ─── تعديل سؤال ────────────────────────────────────────
+    public function updateFaq(Request $request, Faq $faq): JsonResponse
+    {
+        $validated = $request->validate([
+            'question' => 'sometimes|string|max:500',
+            'answer' => 'sometimes|string',
+            'order' => 'nullable|integer',
+        ]);
+
+        $faq->update($validated);
+
+        return response()->json($faq);
+    }
+
+    // ─── حذف سؤال ──────────────────────────────────────────
+    public function deleteFaq(Faq $faq): JsonResponse
+    {
+        $faq->delete();
+
+        return response()->json(['message' => 'تم حذف السؤال بنجاح']);
+    }
 }

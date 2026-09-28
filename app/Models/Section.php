@@ -22,18 +22,6 @@ class Section extends Model
     {
         return $this->hasMany(Lesson::class)->orderBy('order');
     }
-    public function show(Course $course): JsonResponse
-{
-    $course->load([
-        'sections' => function ($query) {
-            $query->orderBy('order');
-        },
-        'sections.lessons' => function ($query) {
-            $query->select('id', 'section_id', 'title', 'duration', 'order', 'is_preview', 'video_id')
-                  ->orderBy('order');
-        }
-    ]);
+    
 
-    return response()->json($course);
-}
 }
