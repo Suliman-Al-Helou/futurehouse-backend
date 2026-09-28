@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\EnrollmentController;
 use App\Http\Controllers\Api\ProgressController;
 use App\Http\Controllers\Api\TaskController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\LessonController;
 
 // ─── Health ──────────────────────────────────────────────
 Route::get('/health', fn () => response()->json(['status' => 'ok']));
@@ -46,6 +47,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/courses/{course}/enroll', [EnrollmentController::class, 'unenroll']);
     Route::get('/lessons/{id}/task', [TaskController::class, 'show']);
     Route::post('/lessons/{id}/task', [TaskController::class, 'submit']);
+    Route::get('/lessons/{lesson}', [LessonController::class, 'show']);
 });
 
 // ─── Admin ────────────────────────────────────────────────

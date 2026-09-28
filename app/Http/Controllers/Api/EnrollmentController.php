@@ -5,35 +5,25 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Course;
 use App\Models\Enrollment;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 class EnrollmentController extends Controller
 {
+
     // تسجيل في كورس
     public function enroll(Request $request, Course $course): JsonResponse
     {
-        // تحقق إذا مسجل مسبقاً
-        $exists = Enrollment::where('user_id', $request->user()->id)
-            ->where('course_id', $course->id)
-            ->exists();
 
-        if ($exists) {
-            return response()->json([
-                'message' => 'أنت مسجل في هذا الكورس مسبقاً',
-            ], 409);
-        }
-
-        Enrollment::create([
-            'user_id'   => $request->user()->id,
-            'course_id' => $course->id,
-        ]);
-
-        // زيادة عداد الطلاب
-        $course->increment('students_count');
+        Gate::authorize('enroll', $course);
+        Enrollment::updateOrCreate(
+            ['user_id' => $request->user()->id, 'course_id' => $course->id],
+            ['status' => 'pending', 'enrolled_at' => now()]
+        );
 
         return response()->json([
-            'message' => 'تم التسجيل في الكورس بنجاح',
+            'message' => 'تم إرسال طلب الاشتراك، بانتظار موافقة الإدارة',
         ], 201);
     }
 
@@ -51,22 +41,28 @@ class EnrollmentController extends Controller
     // التحقق إذا الطالب مسجل في كورس
     public function checkEnrollment(Request $request, Course $course): JsonResponse
     {
-        $enrolled = Enrollment::where('user_id', $request->user()->id)
+        $enrollment = Enrollment::where('user_id', $request->user()->id)
             ->where('course_id', $course->id)
-            ->exists();
+            ->first();
 
-        return response()->json(['enrolled' => $enrolled]);
+        return response()->json([
+            'enrolled' => $enrollment?->status === 'approved',
+            'status' => $enrollment?->status,
+            'can_watch' => Gate::allows('watch', $course),
+            'can_enroll' => Gate::allows('enroll', $course),
+        ]);
     }
+
     public function unenroll(Request $request, Course $course): JsonResponse
-{
-    Enrollment::where('user_id', $request->user()->id)
-        ->where('course_id', $course->id)
-        ->delete();
+    {
+        Enrollment::where('user_id', $request->user()->id)
+            ->where('course_id', $course->id)
+            ->delete();
 
-    $course->decrement('students_count');
+        $course->decrement('students_count');
 
-    return response()->json([
-        'message' => 'تم سحب التسجيل بنجاح',
-    ]);
-}
+        return response()->json([
+            'message' => 'تم سحب التسجيل بنجاح',
+        ]);
+    }
 }

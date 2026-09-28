@@ -3,6 +3,7 @@
 namespace App\Policies;
 
 use App\Models\Course;
+use App\Models\Lesson;
 use App\Models\User;
 
 class CoursePolicy
@@ -15,7 +16,7 @@ class CoursePolicy
      */
     public function watch(User $user, Course $course): bool
     {
-        if ($course->is_public) {
+        if ($course->isFree()) {
             return true; // كورس مجاني — وصول فوري، بدون enrollment إطلاقًا
         }
 
@@ -25,6 +26,12 @@ class CoursePolicy
             ->exists();
     }
 
+    public function watchLesson(User $user, Course $course, Lesson $lesson): bool
+    {
+        return $lesson->isPreview()
+            || ($this->watch($user, $course) && $lesson->isUnlockedFor($user));
+    }
+
     /**
      * هل يقدر هاد المستخدم يطلب تسجيل (enroll) بهاد الكورس؟
      * يمنع تسجيل مكرر لو عندو طلب pending أو approved أصلًا، ويمنع
@@ -32,7 +39,7 @@ class CoursePolicy
      */
     public function enroll(User $user, Course $course): bool
     {
-        if ($course->is_public) {
+        if ($course->isFree()) { // it,s free no reqiuer for request
             return false;
         }
 
@@ -40,6 +47,6 @@ class CoursePolicy
             ->where('user_id', $user->id)
             ->first();
 
-        return !$existing || $existing->status === 'rejected';
+        return ! $existing || $existing->status === 'rejected';
     }
 }
