@@ -14,24 +14,27 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        RateLimiter::for('auth', function (Request $request) {
-            $email = Str::lower($request->input('email'));
+        // 1. تفعيل الحماية الثنائية الذكية والمعدلة لصفحة تسجيل الدخول (بديلة لـ auth القديمة)
+        RateLimiter::for('login', fn (Request $r) => [
+            Limit::perMinute(5)->by(Str::lower((string) $r->input('email')).'|'.$r->ip()),
+            Limit::perMinute(20)->by($r->ip()),
+        ]);
 
-            // 6 محاولات بالدقيقة، حسب الـ IP — يكفي لمستخدم حقيقي، وبيوقف brute-force
-            return Limit::perHour(3)->by($email.$request->ip());
-        });
+        // 2. تفعيل حماية صفحة تسجيل حساب جديد ضد الحسابات الوهمية
+        RateLimiter::for('register', fn (Request $r) => 
+            Limit::perHour(10)->by($r->ip())
+        );
 
+        // 3. حماية عملية تغيير الباسورد الفعلي
         RateLimiter::for('reset-password', function (Request $request) {
-            $email = Str::lower($request->input('email'));
-
+            $email = is_string($request->input('email')) ? Str::lower($request->input('email')) : '';
             return Limit::perMinute(5)->by($email.$request->ip());
         });
-        RateLimiter::for('forgot-password', function (Request $request) {
-            $email = Str::lower($request->input('email'));
 
+        // 4. حماية مسار طلب رابط الاستعادة لمنع إغراق السيرفر
+        RateLimiter::for('forgot-password', function (Request $request) {
+$email = is_string($request->input('email')) ? Str::lower($request->input('email')) : '';
             return Limit::perMinute(3)->by($email.$request->ip());
         });
-        RateLimiter::for('login', fn ($r) => Limit::perHour(3)->by(Str::lower($r->email).$r->ip()));
-        RateLimiter::for('register', fn ($r) => Limit::perHour(3)->by(Str::lower($r->email).$r->ip()));
     }
 }
