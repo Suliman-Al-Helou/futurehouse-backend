@@ -87,6 +87,8 @@ class AdminController extends Controller
             'total_students' => User::where('role', 'student')->count(),
             'total_courses' => Course::count(),
             'total_enrollments' => Enrollment::count(),
+                    'total_instructors' => Instructor::count(),
+
         ]);
     }
 
@@ -518,4 +520,13 @@ $this->clearCoursesCache();        return response()->json([
 
         return response()->json(['message' => 'تم حذف السؤال بنجاح']);
     }
+    public function coursesOverview(): JsonResponse
+{
+    return response()->json(
+        Course::select('id', 'title', 'level', 'price')
+            ->withCount(['enrollments as students_count' => fn ($q) => $q->where('status', 'approved')])
+            ->orderByDesc('created_at')
+            ->get()
+    );
+}
 }
