@@ -7,7 +7,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
-
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 class AppServiceProvider extends ServiceProvider
 {
     public function register(): void {}
@@ -36,5 +37,12 @@ class AppServiceProvider extends ServiceProvider
 $email = is_string($request->input('email')) ? Str::lower($request->input('email')) : '';
             return Limit::perMinute(3)->by($email.$request->ip());
         });
+DB::listen(function ($query) {
+    if ($query->time > 50) {
+        Log::info("SLOW QUERY ({$query->time}ms): {$query->sql}");
     }
+});
+    }
+
+    
 }

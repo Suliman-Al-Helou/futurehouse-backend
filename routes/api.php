@@ -90,6 +90,8 @@ Route::get('/faqs',          [AdminController::class, 'faqs']);
 Route::post('/faqs',         [AdminController::class, 'storeFaq']);
 Route::put('/faqs/{faq}',    [AdminController::class, 'updateFaq']);
 Route::delete('/faqs/{faq}', [AdminController::class, 'deleteFaq']);
+
+Route::get('/courses-overview', [AdminController::class, 'coursesOverview']);
  
 });
 
