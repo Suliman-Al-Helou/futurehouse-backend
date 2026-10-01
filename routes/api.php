@@ -1,15 +1,17 @@
 <?php
 
+use App\Http\Controllers\Api\Admin\AdminZoomMeetingController;
 use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\Auth\PasswordResetController;
 use App\Http\Controllers\Api\CourseController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\EnrollmentController;
+use App\Http\Controllers\Api\LessonController;
 use App\Http\Controllers\Api\ProgressController;
 use App\Http\Controllers\Api\TaskController;
+use App\Http\Controllers\Api\ZoomMeetingController;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\LessonController;
 
 // ─── Health ──────────────────────────────────────────────
 Route::get('/health', fn () => response()->json(['status' => 'ok']));
@@ -23,13 +25,13 @@ Route::prefix('auth')->group(function () {
 });
 Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:register');
-    Route::post('/login',    [AuthController::class, 'login'])->middleware('throttle:login');
+    Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
 });
 // ─── Courses (Public) ─────────────────────────────────────
 Route::get('/courses', [CourseController::class, 'index']);
 Route::get('/courses/{course}', [CourseController::class, 'show']);
 Route::get('/instructors', [AdminController::class, 'instructors']);
-Route::get('/instructors/{id}', [AdminController::class, 'showInstructor']); 
+Route::get('/instructors/{id}', [AdminController::class, 'showInstructor']);
 Route::get('/faqs', [AdminController::class, 'faqs']);
 // ─── Protected ────────────────────────────────────────────
 Route::middleware('auth:sanctum')->group(function () {
@@ -48,6 +50,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/lessons/{id}/task', [TaskController::class, 'show']);
     Route::post('/lessons/{id}/task', [TaskController::class, 'submit']);
     Route::get('/lessons/{lesson}', [LessonController::class, 'show']);
+       Route::get('/zoom-meetings', [ZoomMeetingController::class, 'index']);
+   Route::post('/zoom-meetings/{zoomMeeting}/attend', [ZoomMeetingController::class, 'attend']);
 });
 
 // ─── Admin ────────────────────────────────────────────────
@@ -86,12 +90,16 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::put('/instructors/{instructor}', [AdminController::class, 'updateInstructor']);
     Route::delete('/instructors/{instructor}', [AdminController::class, 'deleteInstructor']);
     // FAQs
-Route::get('/faqs',          [AdminController::class, 'faqs']);
-Route::post('/faqs',         [AdminController::class, 'storeFaq']);
-Route::put('/faqs/{faq}',    [AdminController::class, 'updateFaq']);
-Route::delete('/faqs/{faq}', [AdminController::class, 'deleteFaq']);
+    Route::get('/faqs', [AdminController::class, 'faqs']);
+    Route::post('/faqs', [AdminController::class, 'storeFaq']);
+    Route::put('/faqs/{faq}', [AdminController::class, 'updateFaq']);
+    Route::delete('/faqs/{faq}', [AdminController::class, 'deleteFaq']);
 
-Route::get('/courses-overview', [AdminController::class, 'coursesOverview']);
- 
+    Route::get('/courses-overview', [AdminController::class, 'coursesOverview']);
+
+       Route::get('/zoom-meetings', [AdminZoomMeetingController::class, 'index']);
+   Route::post('/zoom-meetings', [AdminZoomMeetingController::class, 'store']);
+   Route::put('/zoom-meetings/{zoomMeeting}', [AdminZoomMeetingController::class, 'update']);
+   Route::delete('/zoom-meetings/{zoomMeeting}', [AdminZoomMeetingController::class, 'destroy']);
+   Route::get('/zoom-meetings/{zoomMeeting}/attendances', [AdminZoomMeetingController::class, 'attendances']);
 });
-
