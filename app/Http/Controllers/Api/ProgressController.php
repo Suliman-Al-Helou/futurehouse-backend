@@ -76,6 +76,7 @@ class ProgressController extends Controller
     {
         Gate::authorize('watch', $course);
 
+        $courseId = $course->id;
         $user = Auth::user();
 
         $enrolled = $user->enrollments()->where('course_id', $courseId)->exists();
