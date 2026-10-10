@@ -9,10 +9,14 @@ class ZoomAttendance extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['zoom_meeting_id', 'user_id', 'attended_at'];
+    // attended_at = وقت ضغط "دخول" (joined) ، confirmed_at = الحضور المؤكَّد (attended)
+    protected $fillable = [
+        'zoom_meeting_id', 'user_id', 'attended_at', 'confirmed_at', 'confirmation_method',
+    ];
 
     protected $casts = [
-        'attended_at' => 'datetime',
+        'attended_at'  => 'datetime',
+        'confirmed_at' => 'datetime',
     ];
 
     public function meeting()

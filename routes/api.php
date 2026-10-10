@@ -50,8 +50,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/lessons/{id}/task', [TaskController::class, 'show']);
     Route::post('/lessons/{id}/task', [TaskController::class, 'submit']);
     Route::get('/lessons/{lesson}', [LessonController::class, 'show']);
-       Route::get('/zoom-meetings', [ZoomMeetingController::class, 'index']);
-   Route::post('/zoom-meetings/{zoomMeeting}/attend', [ZoomMeetingController::class, 'attend']);
+    Route::get('/zoom-meetings', [ZoomMeetingController::class, 'index']);
+    Route::get('/zoom-meetings/attendance-summary', [ZoomMeetingController::class, 'attendanceSummary']);
+    Route::get('/zoom-meetings/attendance', [ZoomMeetingController::class, 'attendanceRecord']);
+    Route::post('/zoom-meetings/{zoomMeeting}/attend', [ZoomMeetingController::class, 'attend']);
+    Route::post('/zoom-meetings/{zoomMeeting}/confirm-attendance', [ZoomMeetingController::class, 'confirm'])
+        ->middleware('throttle:10,1'); // يمنع تخمين الكود
 });
 
 // ─── Admin ────────────────────────────────────────────────
@@ -102,4 +106,7 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
    Route::put('/zoom-meetings/{zoomMeeting}', [AdminZoomMeetingController::class, 'update']);
    Route::delete('/zoom-meetings/{zoomMeeting}', [AdminZoomMeetingController::class, 'destroy']);
    Route::get('/zoom-meetings/{zoomMeeting}/attendances', [AdminZoomMeetingController::class, 'attendances']);
+   Route::get('/zoom-meetings/{zoomMeeting}/roster', [AdminZoomMeetingController::class, 'roster']);
+   Route::post('/zoom-meetings/{zoomMeeting}/attendance-code', [AdminZoomMeetingController::class, 'releaseCode']);
+   Route::put('/zoom-meetings/{zoomMeeting}/attendances/{user}', [AdminZoomMeetingController::class, 'setAttendance']);
 });
