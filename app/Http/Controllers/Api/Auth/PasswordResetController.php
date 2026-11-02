@@ -10,8 +10,6 @@ use Illuminate\Support\Facades\Password;
 
 class PasswordResetController extends Controller
 {
-   
-    
     /**
      * إرسال رابط إعادة التعيين (مؤمن بالكامل ضد ثغرات Enumeration)
      */
@@ -37,8 +35,8 @@ class PasswordResetController extends Controller
     public function resetPassword(Request $request): JsonResponse
     {
         $request->validate([
-            'token'    => 'required',
-            'email'    => 'required|email',
+            'token' => 'required',
+            'email' => 'required|email',
             'password' => 'required|min:8|confirmed',
         ]);
 
@@ -49,10 +47,10 @@ class PasswordResetController extends Controller
                 $user->password = bcrypt($password);
                 $user->save();
 
-                // 2. 🛡️ الحل العبقري للأمان وتجنب الانهيار: 
-                // بما أن الباسورد تغير، نقوم فوراً بحذف "كافة" الرموز القديمة النشطة لهذا المستخدم 
+                // 2. 🛡️ الحل العبقري للأمان وتجنب الانهيار:
+                // بما أن الباسورد تغير، نقوم فوراً بحذف "كافة" الرموز القديمة النشطة لهذا المستخدم
                 // لطرده من أي جهاز آخر وسحب الصلاحيات القديمة بأمان ودون انهيار السيرفر!
-                $user->tokens()->delete(); 
+                $user->tokens()->delete();
             }
         );
 
