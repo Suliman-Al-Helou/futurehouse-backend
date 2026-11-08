@@ -27,7 +27,7 @@ An access management model where operational privileges and system capabilities 
 _Avoid_: User-level permissions, Ad-hoc privilege assignment
 
 **Role Enum**:
-A strictly-typed PHP backed enumeration (`UserRole`) that defines all valid user classifications and prevents invalid role states in the domain model.
+A strictly-typed PHP backed enumeration (`UserRole`) that defines all valid user classifications and prevents invalid role states in the domain model. In the pure Spatie architecture, enum cases map directly to Spatie role names (`roles.name`).
 _Avoid_: Hardcoded role strings, Magic strings, Role constants
 
 **Resource Policy**:
@@ -37,6 +37,18 @@ _Avoid_: Controller permission checks, In-method role assertions, Hardcoded role
 **HTTP Middleware Gate**:
 A request boundary interceptor (`RoleMiddleware`, `AdminMiddleware`) that validates role prerequisites at the HTTP routing layer prior to controller execution.
 _Avoid_: Inline route gates, Manual request guards
+
+**Permission**:
+A granular, atomic operational privilege (e.g., `'courses.create'`, `'users.view'`) assigned to roles via Spatie Laravel Permission, governing specific actions within the system independently of high-level user classifications.
+_Avoid_: User-level hardcoded flags, Ad-hoc boolean column permissions, Role-only checks
+
+**Super Admin Bypass**:
+A centralized pre-authorization hook (`Gate::before`) that evaluates authenticated identity privileges before any individual policy method executes, granting administrative users universal access across all abilities while returning `null` for non-administrators to cascade to standard policy evaluations.
+_Avoid_: Repetitive policy `before()` hooks, In-controller admin if-checks, Blanket authorization disabling
+
+**Perimeter Gate vs Entity Policy**:
+The architectural separation of concerns between HTTP routing boundaries and domain data integrity: Perimeter Gates (Middleware such as `RoleMiddleware`, `AdminMiddleware`, `auth:sanctum`) evaluate coarse request-level access before controller dispatch, whereas Entity Policies (`UserPolicy`, `CoursePolicy`, `LessonPolicy`) enforce fine-grained, state-dependent resource ownership rules on specific Eloquent models.
+_Avoid_: Checking resource ownership in middleware, In-controller role validation, Blurring route gates with data policies
 
 ## BFF & Frontend Integration Terms
 
