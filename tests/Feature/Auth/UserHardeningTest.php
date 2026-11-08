@@ -26,6 +26,7 @@ class UserHardeningTest extends TestCase
         $this->assertFalse(Schema::hasColumn('users', 'remember_token'));
         $this->assertTrue(Schema::hasColumn('users', 'is_active'));
         $this->assertTrue(Schema::hasColumn('users', 'deleted_at'));
+        $this->assertFalse(Schema::hasColumn('users', 'role'));
     }
 
     public function test_model_lowercases_email_and_defaults_are_safe(): void
@@ -34,14 +35,14 @@ class UserHardeningTest extends TestCase
 
         $this->assertSame('mixed@example.com', $u->email);
         $this->assertTrue($u->fresh()->is_active);
-        $this->assertSame('student', $u->fresh()->role);
+        $this->assertTrue($u->fresh()->hasRole('student'));
     }
 
     public function test_role_is_not_mass_assignable(): void
     {
         $u = User::create(['name' => 'x', 'email' => 'x@example.com', 'password' => 'Passw0rdX', 'role' => 'admin']);
 
-        $this->assertSame('student', $u->fresh()->role);
+        $this->assertFalse($u->fresh()->hasRole('admin'));
     }
 
     public function test_case_variants_cannot_register_twice(): void
@@ -75,5 +76,22 @@ class UserHardeningTest extends TestCase
 
         $this->expectException(QueryException::class);
         DB::table('users')->insert(['name' => 'x', 'email' => 'UP@example.com', 'password' => 'x']);
+    }
+
+    public function test_duplicate_active_email_rejected_by_database_constraint(): void
+    {
+        DB::table('users')->insert([
+            'name' => 'First User',
+            'email' => 'active_unique@example.com',
+            'password' => 'secret',
+        ]);
+
+        $this->expectException(QueryException::class);
+
+        DB::table('users')->insert([
+            'name' => 'Second User',
+            'email' => 'active_unique@example.com',
+            'password' => 'secret',
+        ]);
     }
 }

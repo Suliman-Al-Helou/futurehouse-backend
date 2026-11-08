@@ -66,4 +66,22 @@ class LoginTest extends TestCase
             ->assertUnauthorized()
             ->assertJson(['message' => 'تم تعطيل هذا الحساب، يرجى التواصل مع الإدارة']);
     }
+
+    public function test_login_revokes_previous_tokens_to_prevent_token_bloat(): void
+    {
+        $user = $this->makeUser();
+
+        $user->createToken('old_token_1');
+        $user->createToken('old_token_2');
+        $this->assertCount(2, $user->fresh()->tokens);
+
+        $this->postJson('/api/auth/login', [
+            'email' => 'student@example.com',
+            'password' => 'Passw0rdX',
+        ])->assertOk();
+
+        $tokens = $user->fresh()->tokens;
+        $this->assertCount(1, $tokens);
+        $this->assertSame('auth_token', $tokens->first()->name);
+    }
 }

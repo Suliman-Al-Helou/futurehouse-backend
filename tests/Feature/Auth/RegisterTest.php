@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -21,24 +22,28 @@ class RegisterTest extends TestCase
 
     public function test_register_returns_201_with_user_and_token(): void
     {
-        // تم تعديل الفحص هنا ليتطابق مع الـ JSON الحالي الراجع من السيرفر قبل بناء الـ API Resource
         $this->postJson('/api/auth/register', $this->payload())
             ->assertCreated()
             ->assertJsonStructure(['message', 'user' => ['id', 'name', 'email', 'role', 'is_active', 'created_at'], 'token'])
             ->assertJsonMissingPath('user.password');
 
-        // نتحقق من قاعدة البيانات مباشرة للتأكد من إسناد الـ role الافتراضي كـ student بأمان
         $this->assertDatabaseHas('users', [
             'email' => 'student@example.com',
-            'role' => 'student',
         ]);
+
+        $user = User::where('email', 'student@example.com')->firstOrFail();
+        $this->assertTrue($user->hasRole('student'));
     }
 
     public function test_role_in_payload_is_ignored(): void
     {
         $this->postJson('/api/auth/register', $this->payload(['role' => 'admin']))->assertCreated();
 
-        $this->assertDatabaseHas('users', ['email' => 'student@example.com', 'role' => 'student']);
+        $this->assertDatabaseHas('users', ['email' => 'student@example.com']);
+
+        $user = User::where('email', 'student@example.com')->firstOrFail();
+        $this->assertTrue($user->hasRole('student'));
+        $this->assertFalse($user->hasRole('admin'));
     }
 
     public function test_duplicate_email_returns_422(): void

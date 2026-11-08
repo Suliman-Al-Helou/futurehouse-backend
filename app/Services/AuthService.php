@@ -9,6 +9,7 @@ use Illuminate\Auth\AuthenticationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Sanctum\PersonalAccessToken;
+use Spatie\Permission\Models\Role;
 
 final class AuthService
 {
@@ -21,14 +22,14 @@ final class AuthService
     public function register(array $data): array
     {
         return DB::transaction(function () use ($data): array {
-            $user = new User([
+            $user = User::create([
                 'name' => $data['name'],
                 'email' => $data['email'],
                 'password' => $data['password'],
             ]);
 
-            $user->role = 'student';
-            $user->save();
+            $role = Role::findOrCreate('student', 'web');
+            $user->assignRole($role);
 
             $token = $user->createToken('auth_token')->plainTextToken;
 
@@ -61,7 +62,10 @@ final class AuthService
             throw new AuthenticationException('تم تعطيل هذا الحساب، يرجى التواصل مع الإدارة');
         }
 
-        // 3. إصدار التوكن
+        // 3. مسح التوكنات القديمة لمنع تراكم الرموز وفرض جلسة نشطة واحدة
+        $user->tokens()->delete();
+
+        // 4. إصدار التوكن الجديد
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return [

@@ -27,9 +27,7 @@ class RoleAccessTest extends TestCase
 
     public function test_student_cannot_access_owner_admin_routes(): void
     {
-        $student = User::factory()->create([
-            'role' => 'student',
-        ]);
+        $student = User::factory()->student()->create();
 
         Sanctum::actingAs($student);
 
@@ -49,9 +47,7 @@ class RoleAccessTest extends TestCase
 
     public function test_admin_can_access_owner_admin_routes(): void
     {
-        $admin = User::factory()->create([
-            'role' => 'admin',
-        ]);
+        $admin = User::factory()->admin()->create();
 
         Sanctum::actingAs($admin);
 
@@ -75,15 +71,17 @@ class RoleAccessTest extends TestCase
 
         $response->assertCreated();
 
-        // Verify the created user has strictly 'student' role in DB
+        // Verify the created user has strictly 'student' role in DB via Spatie
         $this->assertDatabaseHas('users', [
             'email' => 'attacker@example.com',
-            'role' => 'student',
         ]);
 
+        $attacker = User::where('email', 'attacker@example.com')->firstOrFail();
+        $this->assertTrue($attacker->hasRole('student'));
+        $this->assertFalse($attacker->hasRole('admin'));
+
         // Verify newly registered user cannot access admin routes
-        $user = User::where('email', 'attacker@example.com')->first();
-        Sanctum::actingAs($user);
+        Sanctum::actingAs($attacker);
 
         $this->getJson('/api/admin/users')
             ->assertForbidden();

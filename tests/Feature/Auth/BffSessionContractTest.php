@@ -19,10 +19,9 @@ class BffSessionContractTest extends TestCase
     public function test_auth_me_returns_full_user_resource_contract(): void
     {
         /** @var User $user */
-        $user = User::factory()->create([
+        $user = User::factory()->student()->create([
             'name' => 'Ahmad Dev',
             'email' => 'ahmad@example.com',
-            'role' => 'student',
             'is_active' => true,
         ]);
 

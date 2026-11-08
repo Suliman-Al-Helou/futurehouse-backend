@@ -2,10 +2,12 @@
 
 namespace App\Providers;
 
+use App\Models\Course;
 use App\Models\Lesson;
 use App\Models\User;
-use App\Policies\AdminPolicy;
+use App\Policies\CoursePolicy;
 use App\Policies\LessonPolicy;
+use App\Policies\UserPolicy;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
@@ -53,8 +55,17 @@ class AppServiceProvider extends ServiceProvider
 
         Model::preventLazyLoading(! app()->isProduction());
 
-        Gate::policy(User::class, AdminPolicy::class);
-        Gate::policy(Lesson::class, LessonPolicy::class);
+        // Super-admin pre-authorization bypass
+        Gate::before(function ($user, string $ability) {
+            if ($user instanceof User && $user->hasRole('admin')) {
+                return true;
+            }
 
+            return null;
+        });
+
+        Gate::policy(User::class, UserPolicy::class);
+        Gate::policy(Course::class, CoursePolicy::class);
+        Gate::policy(Lesson::class, LessonPolicy::class);
     }
 }
