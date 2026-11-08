@@ -1,6 +1,12 @@
 <?php
 
+use App\Http\Controllers\Api\Admin\AdminCourseController;
 use App\Http\Controllers\Api\Admin\AdminZoomMeetingController;
+use App\Http\Controllers\Api\Admin\EnrollmentController as AdminEnrollmentController;
+use App\Http\Controllers\Api\Admin\FaqController as AdminFaqController;
+use App\Http\Controllers\Api\Admin\InstructorController as AdminInstructorController;
+use App\Http\Controllers\Api\Admin\LessonController as AdminLessonController;
+use App\Http\Controllers\Api\Admin\SectionController as AdminSectionController;
 use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\Auth\PasswordResetController;
@@ -10,6 +16,7 @@ use App\Http\Controllers\Api\EnrollmentController;
 use App\Http\Controllers\Api\LessonController;
 use App\Http\Controllers\Api\ProgressController;
 use App\Http\Controllers\Api\TaskController;
+use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\ZoomMeetingController;
 use Illuminate\Support\Facades\Route;
 
@@ -30,13 +37,14 @@ Route::prefix('auth')->group(function () {
 // ─── Courses (Public) ─────────────────────────────────────
 Route::get('/courses', [CourseController::class, 'index']);
 Route::get('/courses/{course}', [CourseController::class, 'show']);
-Route::get('/instructors', [AdminController::class, 'instructors']);
-Route::get('/instructors/{id}', [AdminController::class, 'showInstructor']);
-Route::get('/faqs', [AdminController::class, 'faqs']);
+Route::get('/instructors', [AdminInstructorController::class, 'index']);
+Route::get('/instructors/{id}', [AdminInstructorController::class, 'show']);
+Route::get('/faqs', [AdminFaqController::class, 'index']);
 // ─── Protected ────────────────────────────────────────────
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
     Route::get('/auth/me', [AuthController::class, 'me']);
+    Route::put('/users/{user}', [UserController::class, 'update']);
     Route::post('/auth/logout', [AuthController::class, 'logout']);
 
     Route::post('/courses/{course}/enroll', [EnrollmentController::class, 'enroll']);
@@ -47,66 +55,63 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/lessons/{id}/progress', [ProgressController::class, 'update']);
     Route::get('/courses/{course}/progress-summary', [ProgressController::class, 'courseSummary']);
     Route::delete('/courses/{course}/enroll', [EnrollmentController::class, 'unenroll']);
-    Route::get('/lessons/{id}/task', [TaskController::class, 'show']);
-    Route::post('/lessons/{id}/task', [TaskController::class, 'submit']);
+    Route::get('/lessons/{lesson}/task', [TaskController::class, 'show']);
+    Route::post('/lessons/{lesson}/task', [TaskController::class, 'submit']);
     Route::get('/lessons/{lesson}', [LessonController::class, 'show']);
     Route::get('/zoom-meetings', [ZoomMeetingController::class, 'index']);
     Route::get('/zoom-meetings/attendance-summary', [ZoomMeetingController::class, 'attendanceSummary']);
     Route::get('/zoom-meetings/attendance', [ZoomMeetingController::class, 'attendanceRecord']);
     Route::post('/zoom-meetings/{zoomMeeting}/attend', [ZoomMeetingController::class, 'attend']);
-    Route::post('/zoom-meetings/{zoomMeeting}/confirm-attendance', [ZoomMeetingController::class, 'confirm'])
-        ->middleware('throttle:10,1'); // يمنع تخمين الكود
 });
 
 // ─── Admin ────────────────────────────────────────────────
-Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {
+Route::middleware(['auth:sanctum', 'can:manageAdmin,App\Models\User'])->prefix('admin')->group(function () {
     Route::get('/stats', [AdminController::class, 'stats']);
     Route::get('/users', [AdminController::class, 'users']);
     Route::get('/students', [AdminController::class, 'students']);
-    Route::get('/enrollments', [AdminController::class, 'enrollments']);
-    Route::patch('/enrollments/{enrollment}', [AdminController::class, 'updateEnrollment']);
+    Route::get('/enrollments', [AdminEnrollmentController::class, 'index']);
+    Route::patch('/enrollments/{enrollment}', [AdminEnrollmentController::class, 'update']);
 
     // Courses
-    Route::get('/courses', [AdminController::class, 'courses']);
-    Route::post('/courses', [AdminController::class, 'storeCourse']);
-    Route::get('/courses/{course}', [AdminController::class, 'showCourse']);
-    Route::put('/courses/{course}', [AdminController::class, 'updateCourse']);
-    Route::delete('/courses/{course}', [AdminController::class, 'deleteCourse']);
-    Route::get('/courses/{course}/sections', [AdminController::class, 'getSections']);
-    Route::post('/courses/{course}/sections', [AdminController::class, 'storeSection']);
+    Route::get('/courses', [AdminCourseController::class, 'index']);
+    Route::post('/courses', [AdminCourseController::class, 'store']);
+    Route::get('/courses/{course}', [AdminCourseController::class, 'show']);
+    Route::put('/courses/{course}', [AdminCourseController::class, 'update']);
+    Route::delete('/courses/{course}', [AdminCourseController::class, 'destroy']);
+    Route::get('/courses/{course}/sections', [AdminSectionController::class, 'index']);
+    Route::post('/courses/{course}/sections', [AdminSectionController::class, 'store']);
 
     // Sections
-    Route::delete('/sections/{section}', [AdminController::class, 'deleteSection']);
-    Route::post('/sections/{section}/lessons', [AdminController::class, 'storeLesson']);
+    Route::delete('/sections/{section}', [AdminSectionController::class, 'destroy']);
+    Route::post('/sections/{section}/lessons', [AdminLessonController::class, 'store']);
 
     // Lessons
-    Route::put('/lessons/{lesson}', [AdminController::class, 'updateLesson']);
-    Route::delete('/lessons/{lesson}', [AdminController::class, 'deleteLesson']);
+    Route::put('/lessons/{lesson}', [AdminLessonController::class, 'update']);
+    Route::delete('/lessons/{lesson}', [AdminLessonController::class, 'destroy']);
 
     // Tasks
-    Route::get('/lessons/{lesson}/task', [AdminController::class, 'getTask']);
-    Route::post('/lessons/{lesson}/task', [AdminController::class, 'storeTask']);
-    Route::put('/lessons/{lesson}/task', [AdminController::class, 'updateTask']);
+    Route::get('/lessons/{lesson}/task', [AdminLessonController::class, 'getTask']);
+    Route::post('/lessons/{lesson}/task', [AdminLessonController::class, 'storeTask']);
+    Route::put('/lessons/{lesson}/task', [AdminLessonController::class, 'updateTask']);
 
-    Route::get('/instructors', [AdminController::class, 'instructors']);
-    Route::post('/instructors', [AdminController::class, 'storeInstructor']);
-    Route::get('/instructors/{id}', [AdminController::class, 'showInstructor']);
-    Route::put('/instructors/{instructor}', [AdminController::class, 'updateInstructor']);
-    Route::delete('/instructors/{instructor}', [AdminController::class, 'deleteInstructor']);
+    Route::get('/instructors', [AdminInstructorController::class, 'index']);
+    Route::post('/instructors', [AdminInstructorController::class, 'store']);
+    Route::get('/instructors/{id}', [AdminInstructorController::class, 'show']);
+    Route::put('/instructors/{instructor}', [AdminInstructorController::class, 'update']);
+    Route::delete('/instructors/{instructor}', [AdminInstructorController::class, 'destroy']);
     // FAQs
-    Route::get('/faqs', [AdminController::class, 'faqs']);
-    Route::post('/faqs', [AdminController::class, 'storeFaq']);
-    Route::put('/faqs/{faq}', [AdminController::class, 'updateFaq']);
-    Route::delete('/faqs/{faq}', [AdminController::class, 'deleteFaq']);
+    Route::get('/faqs', [AdminFaqController::class, 'index']);
+    Route::post('/faqs', [AdminFaqController::class, 'store']);
+    Route::put('/faqs/{faq}', [AdminFaqController::class, 'update']);
+    Route::delete('/faqs/{faq}', [AdminFaqController::class, 'destroy']);
 
-    Route::get('/courses-overview', [AdminController::class, 'coursesOverview']);
+    Route::get('/courses-overview', [AdminCourseController::class, 'overview']);
 
-       Route::get('/zoom-meetings', [AdminZoomMeetingController::class, 'index']);
-   Route::post('/zoom-meetings', [AdminZoomMeetingController::class, 'store']);
-   Route::put('/zoom-meetings/{zoomMeeting}', [AdminZoomMeetingController::class, 'update']);
-   Route::delete('/zoom-meetings/{zoomMeeting}', [AdminZoomMeetingController::class, 'destroy']);
-   Route::get('/zoom-meetings/{zoomMeeting}/attendances', [AdminZoomMeetingController::class, 'attendances']);
-   Route::get('/zoom-meetings/{zoomMeeting}/roster', [AdminZoomMeetingController::class, 'roster']);
-   Route::post('/zoom-meetings/{zoomMeeting}/attendance-code', [AdminZoomMeetingController::class, 'releaseCode']);
-   Route::put('/zoom-meetings/{zoomMeeting}/attendances/{user}', [AdminZoomMeetingController::class, 'setAttendance']);
+    Route::get('/zoom-meetings', [AdminZoomMeetingController::class, 'index']);
+    Route::post('/zoom-meetings', [AdminZoomMeetingController::class, 'store']);
+    Route::put('/zoom-meetings/{zoomMeeting}', [AdminZoomMeetingController::class, 'update']);
+    Route::delete('/zoom-meetings/{zoomMeeting}', [AdminZoomMeetingController::class, 'destroy']);
+    Route::get('/zoom-meetings/{zoomMeeting}/attendances', [AdminZoomMeetingController::class, 'attendances']);
+    Route::get('/zoom-meetings/{zoomMeeting}/roster', [AdminZoomMeetingController::class, 'roster']);
+    Route::put('/zoom-meetings/{zoomMeeting}/attendances/{user}', [AdminZoomMeetingController::class, 'setAttendance']);
 });

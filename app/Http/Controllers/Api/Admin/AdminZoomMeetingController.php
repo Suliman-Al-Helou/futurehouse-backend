@@ -1,80 +1,62 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Course;
-use App\Models\Enrollment;
+use App\Http\Requests\ZoomMeetingRequest;
+use App\Http\Resources\ZoomMeetingResource;
 use App\Models\User;
-use App\Models\ZoomAttendance;
 use App\Models\ZoomMeeting;
+use App\Services\ZoomService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Http\Response;
 
 class AdminZoomMeetingController extends Controller
 {
-    private function rules(): array
-    {
-        return [
-            'course_id' => 'required|integer|exists:courses,id',
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string|max:2000',
-            'zoom_link' => 'required|url|max:2048',
-            'starts_at' => 'required|date',
-            'duration_minutes' => 'nullable|integer|min:15|max:480',
-        ];
-    }
+    public function __construct(
+        private readonly ZoomService $zoomService,
+    ) {}
 
-    // قائمة كل اللقاءات (الأحدث أولًا) مع عدد الحاضرين
-    public function index(): JsonResponse
+    /** Lists all meetings (newest first) with course info and attendance counts. */
+    public function index(): AnonymousResourceCollection
     {
-        return response()->json(
-            ZoomMeeting::with('course:id,title')->withCount(['attendances',   'attendances as confirmed_count' => fn ($q) => $q->whereNotNull('confirmed_at')])->orderByDesc('starts_at')->get()
+        return ZoomMeetingResource::collection(
+            ZoomMeeting::with('course:id,title')
+                ->withCount('attendances')
+                ->orderByDesc('starts_at')
+                ->get()
         );
     }
-    // بيانات الحفظ: نتحقق، وبنخزّن اسم الكورس من عنوانه (لتبقى course_name متزامنة)
 
-    private function payload(Request $request): array
+    /** Creates a Zoom meeting. */
+    public function store(ZoomMeetingRequest $request): JsonResponse
     {
-        $data = $request->validate($this->rules());
+        $meeting = $this->zoomService->create($request->validated());
 
-        $data['course_name'] = Course::findOrFail($data['course_id'])->title;
-        $data['duration_minutes'] = $data['duration_minutes'] ?? 60;
-
-        return $data;
+        return response()->json(new ZoomMeetingResource($meeting), 201);
     }
 
-    public function store(Request $request): JsonResponse
+    /** Updates a Zoom meeting. */
+    public function update(ZoomMeetingRequest $request, ZoomMeeting $zoomMeeting): JsonResponse
     {
-        $data = $request->validate($this->rules());
+        $meeting = $this->zoomService->update($zoomMeeting, $request->validated());
 
-        $data['course_name'] = Course::findOrFail($data['course_id'])->title;
-        $data['duration_minutes'] = $data['duration_minutes'] ?? 60;
-
-        return response()->json(ZoomMeeting::create($data), 201);
+        return response()->json(new ZoomMeetingResource($meeting));
     }
 
-    public function update(Request $request, ZoomMeeting $zoomMeeting): JsonResponse
+    /** Deletes a Zoom meeting (cascade removes attendances). */
+    public function destroy(ZoomMeeting $zoomMeeting): Response
     {
-        $data = $request->validate($this->rules());
-        $data['course_name'] = Course::findOrFail($data['course_id'])->title;
-        if (! isset($data['duration_minutes'])) {
-            unset($data['duration_minutes']); // نُبقي المدة الحالية المخزنة سابقاً دون تدميرها
-        }
+        $zoomMeeting->delete();
 
-        $zoomMeeting->update($data);
-
-        return response()->json($zoomMeeting);
+        return response()->noContent();
     }
 
-    public function destroy(ZoomMeeting $zoomMeeting): JsonResponse
-    {
-        $zoomMeeting->delete(); // cascade يحذف سجلات الحضور
-
-        return response()->json(['message' => 'تم حذف اللقاء']);
-    }
-
-    // من حضر هذا اللقاء
+    /** Lists attendances for a specific meeting. */
     public function attendances(ZoomMeeting $zoomMeeting): JsonResponse
     {
         $rows = $zoomMeeting->attendances()
@@ -84,82 +66,20 @@ class AdminZoomMeetingController extends Controller
 
         return response()->json($rows);
     }
-    
-    
-    
-    // كل الطلاب المقبولين في كورس اللقاء مع حالة كل واحد (للتحضير اليدوي)
+
+    /** All approved students in the course with their attendance status (for manual marking). */
     public function roster(ZoomMeeting $zoomMeeting): JsonResponse
     {
-        $studentIds = Enrollment::where('course_id', $zoomMeeting->course_id)
-            ->where('status', 'approved')
-            ->pluck('user_id');
-
-        $students = User::whereIn('id', $studentIds)->orderBy('name')->get(['id', 'name', 'email']);
-        $attendances = $zoomMeeting->attendances()->get()->keyBy('user_id');
-
-        return response()->json(
-            $students->map(function (User $user) use ($attendances) {
-                $attendance = $attendances->get($user->id);
-
-                return [
-                    'user'         => ['id' => $user->id, 'name' => $user->name, 'email' => $user->email],
-                    'joined_at'    => $attendance?->attended_at,
-                    'attended'     => $attendance?->confirmed_at !== null,
-                    'confirmed_at' => $attendance?->confirmed_at,
-                    'method'       => $attendance?->confirmation_method,
-                ];
-            })->values()
-        );
+        return response()->json($this->zoomService->roster($zoomMeeting));
     }
 
-    // الأدمن يطلق كود حضور جديد (4 أرقام) أثناء اللقاء
-    public function releaseCode(ZoomMeeting $zoomMeeting): JsonResponse
-    {
-        if (! $zoomMeeting->canReleaseCode()) {
-            return response()->json(['message' => 'يمكن إطلاق الكود أثناء اللقاء فقط'], 422);
-        }
-
-        $zoomMeeting->forceFill([
-            'attendance_code'            => str_pad((string) random_int(0, 9999), 4, '0', STR_PAD_LEFT),
-            'attendance_code_expires_at' => now()->addMinutes(ZoomMeeting::CODE_VALID_MINUTES),
-        ])->save();
-
-        return response()->json([
-            'code'       => $zoomMeeting->attendance_code,
-            'expires_at' => $zoomMeeting->attendance_code_expires_at,
-        ]);
-    }
-
-    // تعديل يدوي: تأكيد حضور طالب أو إلغاء تأكيده
+    /** Manually confirms or revokes a student's attendance. */
     public function setAttendance(Request $request, ZoomMeeting $zoomMeeting, User $user): JsonResponse
     {
-        $data = $request->validate(['attended' => 'required|boolean']);
+        $data = $request->validate(['attended' => ['required', 'boolean']]);
 
-        $enrolled = Enrollment::where('user_id', $user->id)
-            ->where('course_id', $zoomMeeting->course_id)
-            ->where('status', 'approved')
-            ->exists();
-
-        if (! $enrolled) {
-            return response()->json(['message' => 'الطالب غير مقبول في كورس هذا اللقاء'], 422);
-        }
-
-        $attendance = ZoomAttendance::where('zoom_meeting_id', $zoomMeeting->id)
-            ->where('user_id', $user->id)
-            ->first();
-
-        if ($data['attended']) {
-            $attendance ??= new ZoomAttendance([
-                'zoom_meeting_id' => $zoomMeeting->id,
-                'user_id'         => $user->id,
-            ]);
-            $attendance->fill(['confirmed_at' => now(), 'confirmation_method' => 'manual'])->save();
-        } elseif ($attendance) {
-            $attendance->update(['confirmed_at' => null, 'confirmation_method' => null]);
-        }
+        $this->zoomService->setAttendance($zoomMeeting, $user, (bool) $data['attended']);
 
         return response()->json(['attended' => (bool) $data['attended']]);
     }
- }
-
-    
+}
