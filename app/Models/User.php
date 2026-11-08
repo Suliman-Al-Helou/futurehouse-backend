@@ -10,10 +10,11 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
+    use HasApiTokens, HasFactory, HasRoles, Notifiable, SoftDeletes;
 
     protected $fillable = ['name', 'email', 'password'];
 
@@ -30,6 +31,11 @@ class User extends Authenticatable
         return Attribute::set(fn (string $value) => mb_strtolower(trim($value)));
     }
 
+    protected function role(): Attribute
+    {
+        return Attribute::get(fn ($value) => $this->getRoleNames()->first() ?? $value ?? 'student');
+    }
+
     // D5: no remember_token column; an empty name makes Eloquent skip it.
     public function getRememberTokenName(): string
     {
@@ -39,22 +45,31 @@ class User extends Authenticatable
     // ═════════════ SCOPES ═════════════
     public function scopeStudents(Builder $query): Builder
     {
-        return $query->where('role', 'student');
+        return $query->role('student');
     }
 
     public function scopeNonAdmin(Builder $query): Builder
     {
-        return $query->where('role', '!=', 'admin');
+        return $query->withoutRole('admin');
     }
 
     // ═════════════ CHECKS ═════════════
     /**
-     * التحقق مما إذا كان المستخدم يمتلك صلاحيات المسؤول (Admin).
+     * Determine whether the user has administrator privileges.
      */
     public function isAdmin(): bool
     {
-        return $this->role === 'admin';
+        return $this->hasRole('admin') || ($this->attributes['role'] ?? null) === 'admin';
     }
+
+    /**
+     * Determine whether the user has student privileges.
+     */
+    public function isStudent(): bool
+    {
+        return $this->hasRole('student');
+    }
+
     // ═════════════ RELATIONS ═════════════
 
     // الكورسات المسجل فيها

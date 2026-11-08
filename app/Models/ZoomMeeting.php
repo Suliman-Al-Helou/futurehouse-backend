@@ -13,9 +13,6 @@ class ZoomMeeting extends Model
     // الزر يفتح قبل اللقاء بـ 15 دقيقة
     public const JOIN_OPENS_MINUTES_BEFORE = 15;
 
-    // مدة صلاحية كود الحضور بعد إطلاقه
-    public const CODE_VALID_MINUTES = 10;
-
     protected $fillable = [
         'course_id', 'title', 'description', 'zoom_link', 'starts_at', 'duration_minutes',
     ];
@@ -23,7 +20,6 @@ class ZoomMeeting extends Model
     protected $casts = [
         'starts_at' => 'datetime',
         'duration_minutes' => 'integer',
-        'attendance_code_expires_at' => 'datetime',
     ];
 
     public function course()

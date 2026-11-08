@@ -2,20 +2,28 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use App\Models\Concerns\ClearsCacheOnChange;
+use App\Support\ContentCache;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
 class Enrollment extends Model
 {
-    use HasFactory;
+    use ClearsCacheOnChange , HasFactory;
 
-    protected $fillable = ['user_id', 'course_id','enrolled_at', 'completed_at','status'];
+    public static function flushCache(): void
+    {
+        ContentCache::forgetCourses();
+    }
+
+    protected $fillable = ['user_id', 'course_id', 'enrolled_at', 'completed_at', 'status'];
 
     protected $casts = [
-        'enrolled_at'  => 'datetime',
+        'enrolled_at' => 'datetime',
         'completed_at' => 'datetime',
-        'status'       => 'string',
+        'status' => 'string',
     ];
+
     public function user()
     {
         return $this->belongsTo(User::class);
