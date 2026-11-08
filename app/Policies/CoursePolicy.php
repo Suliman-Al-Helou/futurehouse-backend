@@ -39,10 +39,6 @@ class CoursePolicy
      */
     public function enroll(User $user, Course $course): bool
     {
-        if ($course->isFree()) { // it,s free no reqiuer for request
-            return false;
-        }
-
         $existing = $course->enrollments()
             ->where('user_id', $user->id)
             ->first();

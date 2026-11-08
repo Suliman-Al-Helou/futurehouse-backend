@@ -216,4 +216,73 @@ class CourseTest extends TestCase
         $course->load('instructor');
         $this->assertSame('Sarah Connor', $course->instructor_name);
     }
+
+    public function test_free_course_enroll_creates_approved_enrollment_immediately(): void
+    {
+        $course = Course::create([
+            'title' => 'Free React Course',
+            'description' => 'Learn React Free',
+            'status' => 'published',
+            'is_public' => true,
+            'price' => 0,
+        ]);
+
+        $student = User::factory()->student()->create();
+
+        $response = $this->actingAs($student, 'sanctum')
+            ->postJson("/api/courses/{$course->id}/enroll");
+
+        $response->assertCreated()
+            ->assertJsonPath('status', 'approved');
+
+        $this->assertDatabaseHas('enrollments', [
+            'user_id' => $student->id,
+            'course_id' => $course->id,
+            'status' => 'approved',
+        ]);
+    }
+
+    public function test_free_course_watching_lesson_progress_auto_enrolls_in_my_courses(): void
+    {
+        $course = Course::create([
+            'title' => 'Free Vue Course',
+            'description' => 'Learn Vue Free',
+            'status' => 'published',
+            'is_public' => true,
+            'price' => 0,
+        ]);
+
+        $section = Section::create(['course_id' => $course->id, 'title' => 'Intro', 'order' => 1]);
+        $lesson = Lesson::create([
+            'section_id' => $section->id,
+            'title' => 'Lesson 1',
+            'duration' => 15,
+            'order' => 1,
+            'is_preview' => false,
+        ]);
+
+        $student = User::factory()->student()->create();
+
+        // Update progress on lesson
+        $this->actingAs($student, 'sanctum')
+            ->postJson("/api/lessons/{$lesson->id}/progress", [
+                'watched_percent' => 50,
+                'last_position' => 120,
+            ])
+            ->assertOk();
+
+        // Check enrollment exists as approved
+        $this->assertDatabaseHas('enrollments', [
+            'user_id' => $student->id,
+            'course_id' => $course->id,
+            'status' => 'approved',
+        ]);
+
+        // Check it appears in /api/my-courses
+        $myCoursesResponse = $this->actingAs($student, 'sanctum')
+            ->getJson('/api/my-courses');
+
+        $myCoursesResponse->assertOk()
+            ->assertJsonFragment(['course_id' => $course->id]);
+    }
 }
