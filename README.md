@@ -109,7 +109,7 @@ This platform was built to solve specific distributed learning and data-integrit
 - **PostgreSQL**: `^16` or higher
 - **Node.js & NPM**: for auxiliary tooling (optional)
 
-### Installation
+### Quick Start (Local Setup)
 
 1. **Clone the repository:**
    ```bash
@@ -117,7 +117,7 @@ This platform was built to solve specific distributed learning and data-integrit
    cd futurehouse-backend
    ```
 
-2. **Install dependencies:**
+2. **Install Composer dependencies:**
    ```bash
    composer install --prefer-dist --optimize-autoloader
    ```
@@ -127,18 +127,57 @@ This platform was built to solve specific distributed learning and data-integrit
    cp .env.example .env
    php artisan key:generate
    ```
-   *Configure your PostgreSQL credentials in `.env` (`DB_CONNECTION=pgsql`, `DB_HOST`, `DB_DATABASE`, etc.).*
+   *Edit `.env` to set your PostgreSQL connection details:*
+   ```ini
+   DB_CONNECTION=pgsql
+   DB_HOST=127.0.0.1
+   DB_PORT=5432
+   DB_DATABASE=your_database_name
+   DB_USERNAME=your_database_user
+   DB_PASSWORD=your_database_password
+   ```
 
-4. **Execute migrations & seeders:**
+4. **Execute database migrations & seeders:**
    ```bash
    php artisan migrate --seed
+   # Optionally seed rich demo course and student data:
+   php artisan db:seed --class=DemoSeeder
    ```
 
 5. **Start local development server:**
    ```bash
    php artisan serve --port=8000
    ```
-   *The API health check will be live at `GET http://localhost:8000/api/health`.*
+
+6. **Verify installation:**
+   ```bash
+   curl -s http://localhost:8000/api/health
+   # Expected response: {"status":"ok"}
+   ```
+
+### 🔑 Seeded Demo Credentials
+
+| Role | Email | Password | Access Scope |
+| :--- | :--- | :--- | :--- |
+| **Admin** | `sulimanalhellou@gmail.com` | `Suliman123` | Full administrative control (`/api/admin/*`) |
+| **Student** | `test@test.com` | `password` | Student dashboard, course enrollment, tasks, zoom attendance |
+
+---
+
+### Alternative: Running with Docker
+
+If you prefer running inside a container without configuring a local PHP runtime:
+
+```bash
+# 1. Build the Docker image
+docker build -t futurehouse-backend .
+
+# 2. Run container with your .env configuration
+docker run -d -p 8000:8000 --env-file .env --name futurehouse-api futurehouse-backend
+
+# 3. Check container logs
+docker logs -f futurehouse-api
+```
 
 ---
 
