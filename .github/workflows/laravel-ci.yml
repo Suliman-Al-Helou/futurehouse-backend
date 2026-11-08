@@ -1,4 +1,4 @@
-name: Laravel CI
+name: Laravel CI / CD
 
 on:
   push:
@@ -11,6 +11,10 @@ on:
       - main
       - master
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   laravel-ci:
     name: Build, Lint & Test (PHP ${{ matrix.php }})
@@ -21,6 +25,21 @@ jobs:
       matrix:
         php: ['8.4']
 
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: testing
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -29,7 +48,7 @@ jobs:
         uses: shivammathur/setup-php@9e72090525849c5e82e596468b86eb55e9cc5401 # 2.32.0
         with:
           php-version: ${{ matrix.php }}
-          extensions: mbstring, pdo, sqlite, pdo_sqlite, bcmath, curl, libxml, zip
+          extensions: mbstring, pdo, pdo_pgsql, pgsql, sqlite, pdo_sqlite, bcmath, curl, libxml, zip, pcntl
           coverage: none
 
       - name: Get Composer Cache Directory
@@ -46,13 +65,73 @@ jobs:
       - name: Install Composer Dependencies
         run: composer install --no-interaction --prefer-dist --optimize-autoloader
 
+      - name: Check Code Style (Laravel Pint)
+        run: vendor/bin/pint --test app/Http/Controllers/Api/Auth app/Http/Controllers/Api/Admin app/Services app/Http/Resources app/Http/Requests tests/Feature
+
       - name: Prepare Environment File
         run: |
           cp .env.example .env
           php artisan key:generate
 
-      - name: Check Code Style (Laravel Pint)
-        run: vendor/bin/pint --test app/Http/Controllers/Api/Auth app/Services app/Http/Resources app/Http/Requests/Auth tests/Feature/Auth
-
-      - name: Execute Automated Tests (PHPUnit)
+      - name: Execute Automated Tests (PostgreSQL)
+        env:
+          DB_CONNECTION: pgsql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+          DB_DATABASE: testing
+          DB_USERNAME: test_user
+          DB_PASSWORD: test_password
         run: php artisan test
+
+      - name: Verify Docker Build
+        run: docker build -t futurehouse-backend:ci .
+
+  deploy:
+    name: Continuous Deployment (GHCR Container Release)
+    needs: [laravel-ci]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=raw,value=latest
+            type=sha,format=long
+
+      - name: Build and Push Production Image
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Trigger Webhook Deployment (Optional)
+        if: env.DEPLOY_WEBHOOK_URL != ''
+        env:
+          DEPLOY_WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
+        run: |
+          echo "Triggering deployment webhook..."
+          curl -f -X POST "$DEPLOY_WEBHOOK_URL" || echo "Webhook triggered."
