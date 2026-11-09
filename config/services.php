@@ -40,4 +40,8 @@ return [
         'revalidate_secret' => env('REVALIDATE_SECRET'),
     ],
 
+    'google' => [
+    'client_id' => env('GOOGLE_CLIENT_ID'),
+    'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+],
 ];
