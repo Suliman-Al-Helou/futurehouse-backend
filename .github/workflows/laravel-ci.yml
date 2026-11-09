@@ -81,6 +81,7 @@ jobs:
           DB_DATABASE: testing
           DB_USERNAME: test_user
           DB_PASSWORD: test_password
+          DB_SSLMODE: prefer
         run: php artisan test
 
       - name: Verify Docker Build
