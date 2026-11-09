@@ -7,6 +7,7 @@ use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Http\Resources\UserResource;
 use App\Services\AuthService;
+use Google\Client as GoogleClient;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -36,6 +37,41 @@ class AuthController extends Controller
             'user' => new UserResource($result['user']),
             'token' => $result['token'],
         ]);
+    }
+
+    // login with goole
+    public function googleLogin(Request $request): JsonResponse
+    {
+        $request->validate([
+            'credential' => 'required|string',
+        ]);
+
+        $clientId = config('services.google.client_id');
+
+        try {
+            $client = new GoogleClient(['client_id' => $clientId]);
+            // التحقق من توقيع وصلاحية Google ID Token تلقائياً
+            $payload = $client->verifyIdToken($request->credential);
+
+            if (! $payload) {
+                return response()->json([
+                    'message' => 'رمز التحقق من Google غير صالح أو منتهي الصلاحية',
+                ], 401);
+            }
+
+            $result = $this->authService->loginWithGoogle($payload);
+
+            return response()->json([
+                'message' => 'تم تسجيل الدخول بنجاح عبر Google',
+                'user' => new UserResource($result['user']),
+                'token' => $result['token'],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'فشل التحقق من حساب Google',
+                'error' => config('app.debug') ? $e->getMessage() : null,
+            ], 400);
+        }
     }
 
     public function logout(Request $request): JsonResponse

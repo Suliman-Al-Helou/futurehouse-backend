@@ -75,6 +75,57 @@ final class AuthService
     }
 
     /**
+     * Authenticate or register a student using Google OAuth payload.
+     *
+     * @param  array{sub: string, email: string, name?: string, picture?: string}  $payload
+     * @return array{user: User, token: string}
+     */
+    public function loginWithGoogle(array $payload): array
+    {
+        return DB::transaction(function () use ($payload): array {
+            $email = mb_strtolower(trim($payload['email']));
+            $googleId = $payload['sub'];
+            $name = $payload['name'] ?? 'طالب';
+
+            // البحث عن المستخدم بواسطة الإيميل أولاً، أو بواسطة google_id
+            $user = User::where('email', $email)
+                ->orWhere('google_id', $googleId)
+                ->first();
+
+            if (! $user) {
+                // مستخدم جديد يسجل لأول مرة عبر Google
+                $user = User::create([
+                    'name' => $name,
+                    'email' => $email,
+                    'google_id' => $googleId,
+                    'password' => Hash::make(str()->random(32)), // كلمة مرور عشوائية قوية
+                ]);
+
+                // إعطاؤه دور student تلقائياً
+                $role = Role::findOrCreate('student', 'web');
+                $user->assignRole($role);
+            } else {
+                // المستخدم موجود مسبقاً -> نقوم بتحديث الـ google_id والصورة إذا لم يكونا موجودين
+                $updates = [];
+                if (! $user->google_id) {
+                    $updates['google_id'] = $googleId;
+                }
+                if (! empty($updates)) {
+                    $user->update($updates);
+                }
+            }
+
+            // توليد توكن Sanctum
+            $token = $user->createToken('auth_token')->plainTextToken;
+
+            return [
+                'user' => $user,
+                'token' => $token,
+            ];
+        });
+    }
+
+    /**
      * Revoke the current access token used for authentication.
      * Preserves active sessions on other devices.
      */

@@ -17,15 +17,21 @@ class EnrollmentController extends Controller
     // تسجيل في كورس
     public function enroll(Request $request, Course $course): JsonResponse
     {
-
         Gate::authorize('enroll', $course);
+
+        $isFree = $course->isFree();
+        $status = $isFree ? 'approved' : 'pending';
+
         Enrollment::updateOrCreate(
             ['user_id' => $request->user()->id, 'course_id' => $course->id],
-            ['status' => 'pending', 'enrolled_at' => now()]
+            ['status' => $status, 'enrolled_at' => now()]
         );
 
         return response()->json([
-            'message' => 'تم إرسال طلب الاشتراك، بانتظار موافقة الإدارة',
+            'message' => $isFree
+                ? 'تم الانضمام للكورس المجاني بنجاح'
+                : 'تم إرسال طلب الاشتراك، بانتظار موافقة الإدارة',
+            'status' => $status,
         ], 201);
     }
 
