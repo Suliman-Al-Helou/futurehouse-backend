@@ -2,10 +2,17 @@
 
 namespace App\Providers;
 
+use App\Models\Course;
+use App\Models\Lesson;
+use App\Models\User;
+use App\Policies\CoursePolicy;
+use App\Policies\LessonPolicy;
+use App\Policies\UserPolicy;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
@@ -28,17 +35,17 @@ class AppServiceProvider extends ServiceProvider
         );
 
         // 3. حماية عملية تغيير الباسورد الفعلي
-        RateLimiter::for('reset-password', function (Request $request) {
-            $email = is_string($request->input('email')) ? Str::lower($request->input('email')) : '';
+        RateLimiter::for('reset-password', function (Request $r) {
+            $email = is_string($r->input('email')) ? Str::lower($r->input('email')).'.'.$r->ip() : '';
 
-            return Limit::perMinute(5)->by($email.$request->ip());
+            return Limit::perMinute(5)->by($email.$r->ip());
         });
 
         // 4. حماية مسار طلب رابط الاستعادة لمنع إغراق السيرفر
-        RateLimiter::for('forgot-password', function (Request $request) {
-            $email = is_string($request->input('email')) ? Str::lower($request->input('email')) : '';
+        RateLimiter::for('forgot-password', function (Request $r) {
+            $email = is_string($r->input('email')) ? Str::lower($r->input('email')).'.'.$r->ip() : '';
 
-            return Limit::perMinute(3)->by($email.$request->ip());
+            return Limit::perMinute(3)->by($email.$r->ip());
         });
         DB::listen(function ($query) {
             if ($query->time > 50) {
@@ -46,8 +53,19 @@ class AppServiceProvider extends ServiceProvider
             }
         });
 
+        Model::preventLazyLoading(! app()->isProduction());
 
-            Model::preventLazyLoading(! app()->isProduction());
+        // Super-admin pre-authorization bypass
+        Gate::before(function ($user, string $ability) {
+            if ($user instanceof User && $user->hasRole('admin')) {
+                return true;
+            }
 
+            return null;
+        });
+
+        Gate::policy(User::class, UserPolicy::class);
+        Gate::policy(Course::class, CoursePolicy::class);
+        Gate::policy(Lesson::class, LessonPolicy::class);
     }
 }

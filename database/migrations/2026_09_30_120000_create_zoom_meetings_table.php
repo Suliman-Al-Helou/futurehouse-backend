@@ -11,11 +11,12 @@ return new class extends Migration
         // لقاءات Zoom — مفصولة تمامًا عن الكورسات/الدروس
         Schema::create('zoom_meetings', function (Blueprint $table) {
             $table->id();
-            $table->string('course_name');          // يدخله الأدمن يدويًا
+            $table->foreignId('course_id')->constrained('courses')->cascadeOnDelete();
             $table->string('title');
             $table->text('description')->nullable();
             $table->string('zoom_link');
             $table->dateTime('starts_at')->index();
+            $table->smallInteger('duration_minutes')->default(60);
             $table->timestamps();
         });
 

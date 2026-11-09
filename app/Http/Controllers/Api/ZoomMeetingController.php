@@ -77,7 +77,7 @@ class ZoomMeetingController extends Controller
         return response()->json(
             $meetings->map(function (ZoomMeeting $m) use ($attendances) {
                 $attendance = $attendances->get($m->id);
-                $attended = $attendance?->confirmed_at !== null;
+                $attended = $attendance?->attended_at !== null;
 
                 return [
                     'id' => $m->id,
@@ -88,9 +88,7 @@ class ZoomMeetingController extends Controller
                     'starts_at' => $m->starts_at,
                     'ends_at' => $m->endsAt(),
                     'can_join' => $m->canJoin(),
-                    'joined' => $attendance?->attended_at !== null,
                     'attended' => $attended,
-                    'code_open' => $attendance?->attended_at !== null && ! $attended && $m->isCodeOpen(),
                 ];
             })->values()
         );
@@ -98,7 +96,7 @@ class ZoomMeetingController extends Controller
 
     /**
      * POST /api/zoom-meetings/{zoomMeeting}/attend
-     * يسجّل أن الطالب ضغط دخول ويرجّع رابط زووم.
+     * يسجّل أن الطالب ضغط زر الدخول (تسجيل الحضور فوراً) ويرجّع رابط زووم.
      */
     public function attend(ZoomMeeting $zoomMeeting): JsonResponse
     {
@@ -127,39 +125,6 @@ class ZoomMeetingController extends Controller
     }
 
     /**
-     * POST /api/zoom-meetings/{zoomMeeting}/confirm-attendance
-     * تأكيد حضور الطالب بإدخال الكود الرقمي المعروض باللقاء.
-     */
-    public function confirm(Request $request, ZoomMeeting $zoomMeeting): JsonResponse
-    {
-        if ($denied = $this->denyIfNotEnrolled($zoomMeeting)) {
-            return $denied;
-        }
-
-        $data = $request->validate(['code' => ['required', 'digits:4']]);
-
-        $attendance = ZoomAttendance::where('zoom_meeting_id', $zoomMeeting->id)
-            ->where('user_id', Auth::id())
-            ->first();
-
-        if (! $attendance || $attendance->attended_at === null) {
-            return response()->json(['message' => 'يجب عليك الدخول للقاء زووم أولاً من خلال الموقع قبل تأكيد الكود'], 422);
-        }
-
-        if ($attendance->confirmed_at !== null) {
-            return response()->json(['attended' => true]);
-        }
-
-        if (! $zoomMeeting->isCodeOpen() || ! hash_equals((string) $zoomMeeting->attendance_code, $data['code'])) {
-            return response()->json(['message' => 'الكود المدخل غير صحيح أو انتهت صلاحية اعتماده'], 422);
-        }
-
-        $attendance->update(['confirmed_at' => now(), 'confirmation_method' => 'code']);
-
-        return response()->json(['attended' => true]);
-    }
-
-    /**
      * GET /api/zoom-meetings/attendance-summary
      * نسبة حضور وغياب الطالب الإجمالية لكل الكورسات المشترك بها.
      */
@@ -176,7 +141,7 @@ class ZoomMeetingController extends Controller
             $ended = $this->endedMeetings($enrollment);
 
             $attended = ZoomAttendance::where('user_id', $userId)
-                ->whereNotNull('confirmed_at')
+                ->whereNotNull('attended_at')
                 ->whereIn('zoom_meeting_id', $ended->pluck('id'))
                 ->count();
 
@@ -229,8 +194,8 @@ class ZoomMeetingController extends Controller
                     'title' => $m->title,
                     'starts_at' => $m->starts_at,
                     'ends_at' => $m->endsAt(),
-                    'joined_at' => $attendance?->attended_at,
-                    'attended' => $attendance?->confirmed_at !== null,
+                    'attended_at' => $attendance?->attended_at,
+                    'attended' => $attendance?->attended_at !== null,
                 ];
             })->values()
         );

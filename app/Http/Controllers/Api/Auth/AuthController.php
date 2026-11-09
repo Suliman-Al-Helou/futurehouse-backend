@@ -5,62 +5,50 @@ namespace App\Http\Controllers\Api\Auth;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
-use App\Models\User;
+use App\Http\Resources\UserResource;
+use App\Services\AuthService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
-use Laravel\Sanctum\PersonalAccessToken;
 
 class AuthController extends Controller
 {
+    public function __construct(
+        private readonly AuthService $authService
+    ) {}
+
     public function register(RegisterRequest $request): JsonResponse
     {
-        $user = User::create([
-            'name' => $request->validated('name'),
-            'email' => $request->validated('email'),
-            'password' => $request->validated('password'), // الكاست 'hashed' بيهاشها تلقائيًا
-            'role' => 'student',
-        ]);
-
-        $token = $user->createToken('auth_token')->plainTextToken;
+        $result = $this->authService->register($request->validated());
 
         return response()->json([
             'message' => 'تم إنشاء الحساب بنجاح',
-            'user' => $user,
-            'token' => $token,
+            'user' => new UserResource($result['user']),
+            'token' => $result['token'],
         ], 201);
     }
 
     public function login(LoginRequest $request): JsonResponse
     {
-        $user = User::where('email', $request->validated('email'))->first();
-
-        if (! $user || ! Hash::check($request->validated('password'), $user->password)) {
-            return response()->json([
-                'message' => 'البريد الإلكتروني أو كلمة المرور غير صحيحة',
-            ], 401); // 👈 401 صريح بدل ValidationException (422)
-        }
-
-        $token = $user->createToken('auth_token')->plainTextToken;
+        $result = $this->authService->login($request->validated());
 
         return response()->json([
             'message' => 'تم تسجيل الدخول بنجاح',
-            'user' => $user,
-            'token' => $token,
+            'user' => new UserResource($result['user']),
+            'token' => $result['token'],
         ]);
     }
 
     public function logout(Request $request): JsonResponse
     {
-        /** @var PersonalAccessToken $token */
-        $token = $request->user()->currentAccessToken();
-        $token->delete();
+        $this->authService->logout($request->user());
 
-        return response()->json(['message' => 'تم تسجيل الخروج بنجاح']);
+        return response()->json([
+            'message' => 'تم تسجيل الخروج بنجاح',
+        ]);
     }
 
     public function me(Request $request): JsonResponse
     {
-        return response()->json($request->user());
+        return response()->json(new UserResource($request->user()));
     }
 }

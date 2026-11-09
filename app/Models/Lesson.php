@@ -2,12 +2,19 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\ClearsCacheOnChange;
+use App\Support\ContentCache;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Lesson extends Model
 {
-    use HasFactory;
+    use ClearsCacheOnChange, HasFactory;
+
+    public static function flushCache(): void
+    {
+        ContentCache::forgetCourses();
+    }
 
     protected $fillable = [
         'section_id', 'title', 'description',
@@ -75,9 +82,9 @@ class Lesson extends Model
     }
 
     public function isUnlockedFor(User $user): bool
-{
-    $previous = $this->previousLesson();
+    {
+        $previous = $this->previousLesson();
 
-    return $previous === null || $previous->isCompletedBy($user);
-}
+        return $previous === null || $previous->isCompletedBy($user);
+    }
 }
