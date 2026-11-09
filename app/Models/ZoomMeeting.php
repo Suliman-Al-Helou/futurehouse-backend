@@ -32,6 +32,11 @@ class ZoomMeeting extends Model
         return $this->hasMany(ZoomAttendance::class);
     }
 
+    public function videoAssets()
+    {
+        return $this->hasMany(VideoAsset::class);
+    }
+
     public function endsAt(): Carbon
     {
         return $this->starts_at->copy()->addMinutes($this->duration_minutes ?? 60);

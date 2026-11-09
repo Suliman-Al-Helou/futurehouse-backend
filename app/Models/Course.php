@@ -129,6 +129,16 @@ class Course extends Model
         return $this->is_public;
     }
 
+    public function videoAssets()
+    {
+        return $this->hasMany(VideoAsset::class);
+    }
+
+    public function zoomMeetings()
+    {
+        return $this->hasMany(ZoomMeeting::class);
+    }
+
     public function orderedLessons()
     {
         return $this->lessons()

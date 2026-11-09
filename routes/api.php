@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\Admin\AdminCourseController;
+use App\Http\Controllers\Api\Admin\AdminVideoAssetController;
 use App\Http\Controllers\Api\Admin\AdminZoomMeetingController;
 use App\Http\Controllers\Api\Admin\EnrollmentController as AdminEnrollmentController;
 use App\Http\Controllers\Api\Admin\FaqController as AdminFaqController;
@@ -114,4 +115,11 @@ Route::middleware(['auth:sanctum', 'can:manageAdmin,App\Models\User'])->prefix('
     Route::get('/zoom-meetings/{zoomMeeting}/attendances', [AdminZoomMeetingController::class, 'attendances']);
     Route::get('/zoom-meetings/{zoomMeeting}/roster', [AdminZoomMeetingController::class, 'roster']);
     Route::put('/zoom-meetings/{zoomMeeting}/attendances/{user}', [AdminZoomMeetingController::class, 'setAttendance']);
+
+    // Video Assets
+    Route::get('/video-assets', [AdminVideoAssetController::class, 'index']);
+    Route::post('/video-assets', [AdminVideoAssetController::class, 'store']);
+    Route::get('/video-assets/{videoAsset}', [AdminVideoAssetController::class, 'show']);
+    Route::put('/video-assets/{videoAsset}', [AdminVideoAssetController::class, 'update']);
+    Route::delete('/video-assets/{videoAsset}', [AdminVideoAssetController::class, 'destroy']);
 });
