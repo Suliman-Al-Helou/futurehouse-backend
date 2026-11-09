@@ -8,24 +8,38 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\CourseDetailResource;
 use App\Http\Resources\CourseResource;
 use App\Models\Course;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Cache;
 
 class CourseController extends Controller
 {
-    /** Public published courses list with optional level filter and caching. */
-    public function index(Request $request): AnonymousResourceCollection
+    /** Public published courses list with optional level filter, limit, and caching. */
+    public function index(Request $request): JsonResponse
     {
         $level = in_array($request->level, ['beginner', 'intermediate', 'advanced'], true)
             ? $request->level
             : null;
 
-        $courses = Cache::remember('courses:published:'.($level ?? 'all'), 300, function () use ($level) {
-            return Course::forPublicList($level)->get();
+        // تحديد الحد الأقصى للكورسات المطلوبة (مثلاً 3 لصفحة الهبوط) مع سقف أمان 50
+        $limit = $request->integer('limit');
+        $limit = ($limit > 0 && $limit <= 50) ? $limit : null;
+
+        // مفتاح كاش ديناميكي يعزل كاش صفحة الهبوط (limit_3) عن كاش الكتالوج الكامل
+        $cacheKey = 'courses:published:'.($level ?? 'all').($limit ? ":limit_{$limit}" : '');
+
+        $courses = Cache::remember($cacheKey, 300, function () use ($level, $limit) {
+            $query = Course::forPublicList($level);
+
+            // تطبيق limit في قاعدة البيانات فقط عند طلبه لتسريع الاستعلام
+            if ($limit) {
+                $query->limit($limit);
+            }
+
+            return CourseResource::collection($query->get())->resolve();
         });
 
-        return CourseResource::collection($courses);
+        return response()->json(['data' => $courses]);
     }
 
     /** Single course public view with curriculum (sections & lessons). */

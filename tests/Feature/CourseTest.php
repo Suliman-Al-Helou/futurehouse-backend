@@ -12,6 +12,7 @@ use App\Models\Section;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Config;
 use Tests\TestCase;
 
 class CourseTest extends TestCase
@@ -99,6 +100,31 @@ class CourseTest extends TestCase
             ->assertJsonPath('data.0.title', 'Beg');
     }
 
+    public function test_public_courses_index_limits_and_orders_by_latest(): void
+    {
+        $c1 = Course::create(['title' => 'Course 1', 'description' => 'D1', 'status' => 'published']);
+        $c1->created_at = now()->subDays(3);
+        $c1->save();
+
+        $c2 = Course::create(['title' => 'Course 2', 'description' => 'D2', 'status' => 'published']);
+        $c2->created_at = now()->subDays(2);
+        $c2->save();
+
+        $c3 = Course::create(['title' => 'Course 3', 'description' => 'D3', 'status' => 'published']);
+        $c3->created_at = now()->subDays(1);
+        $c3->save();
+
+        $c4 = Course::create(['title' => 'Course 4 (Latest)', 'description' => 'D4', 'status' => 'published']);
+        $c4->created_at = now();
+        $c4->save();
+
+        $response = $this->getJson('/api/courses?limit=3');
+
+        $response->assertOk()
+            ->assertJsonCount(3, 'data')
+            ->assertJsonPath('data.0.title', 'Course 4 (Latest)');
+    }
+
     public function test_public_course_show_returns_course_detail_resource_with_sections_and_lessons(): void
     {
         $course = Course::create([
@@ -114,6 +140,8 @@ class CourseTest extends TestCase
         $lesson = Lesson::create([
             'section_id' => $section->id,
             'title' => 'Lesson 1',
+            'description' => 'Lesson 1 description',
+            'video_id' => 'W6NZfCO5SIk',
             'duration' => 15,
             'order' => 1,
             'is_preview' => true,
@@ -151,7 +179,9 @@ class CourseTest extends TestCase
             ])
             ->assertJsonPath('data.id', $course->id)
             ->assertJsonPath('data.sections.0.id', $section->id)
-            ->assertJsonPath('data.sections.0.lessons.0.id', $lesson->id);
+            ->assertJsonPath('data.sections.0.lessons.0.id', $lesson->id)
+            ->assertJsonPath('data.sections.0.lessons.0.video_id', 'W6NZfCO5SIk')
+            ->assertJsonPath('data.sections.0.lessons.0.description', 'Lesson 1 description');
     }
 
     public function test_public_course_show_aborts_404_for_draft_course(): void
@@ -284,5 +314,31 @@ class CourseTest extends TestCase
 
         $myCoursesResponse->assertOk()
             ->assertJsonFragment(['course_id' => $course->id]);
+    }
+
+    public function test_public_courses_index_serves_from_cache_safely_on_subsequent_requests(): void
+    {
+        Course::create([
+            'title' => 'Warm Cache Safe Course',
+            'description' => 'Test warm cache deserialization',
+            'level' => 'beginner',
+            'status' => 'published',
+            'price' => 0.0,
+            'is_public' => true,
+        ]);
+
+        // Configure file cache store to verify allowed_classes => false safety
+        Config::set('cache.default', 'file');
+        Cache::forget('courses:published:all');
+
+        // Hit 1: Cold cache miss
+        $response1 = $this->getJson('/api/courses');
+        $response1->assertOk()
+            ->assertJsonPath('data.0.title', 'Warm Cache Safe Course');
+
+        // Hit 2: Warm cache hit (verifies no __PHP_Incomplete_Class or property-on-array error)
+        $response2 = $this->getJson('/api/courses');
+        $response2->assertOk()
+            ->assertJsonPath('data.0.title', 'Warm Cache Safe Course');
     }
 }
