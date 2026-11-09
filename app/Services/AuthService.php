@@ -77,7 +77,7 @@ final class AuthService
     /**
      * Authenticate or register a student using Google OAuth payload.
      *
-     * @param array{sub: string, email: string, name?: string, picture?: string} $payload
+     * @param  array{sub: string, email: string, name?: string, picture?: string}  $payload
      * @return array{user: User, token: string}
      */
     public function loginWithGoogle(array $payload): array

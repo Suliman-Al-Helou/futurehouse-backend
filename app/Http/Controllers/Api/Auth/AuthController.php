@@ -7,11 +7,10 @@ use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Http\Resources\UserResource;
 use App\Services\AuthService;
+use Google\Client as GoogleClient;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Google\Client as GoogleClient;
 
-  
 class AuthController extends Controller
 {
     public function __construct(
@@ -40,7 +39,7 @@ class AuthController extends Controller
         ]);
     }
 
-// login with goole 
+    // login with goole
     public function googleLogin(Request $request): JsonResponse
     {
         $request->validate([
@@ -74,7 +73,6 @@ class AuthController extends Controller
             ], 400);
         }
     }
-
 
     public function logout(Request $request): JsonResponse
     {
