@@ -40,3 +40,4 @@ class VideoAssetResource extends JsonResource
         ];
     }
 }
+

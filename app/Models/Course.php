@@ -129,7 +129,7 @@ class Course extends Model
         return $this->is_public;
     }
 
-    public function videoAssets()
+    public function videoAssets(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(VideoAsset::class);
     }

@@ -16,12 +16,13 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->string('provider')->default('youtube');
             $table->string('provider_video_id');
-            $table->integer('duration_seconds')->default(0);
+            $table->integer('duration_seconds')->default(0)->nullable();
             $table->string('type')->default('recording'); // 'recording' | 'lesson'
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
 
             $table->index(['course_id', 'created_at']);
+            $table->index('zoom_meeting_id');
         });
     }
 
@@ -30,3 +31,4 @@ return new class extends Migration
         Schema::dropIfExists('video_assets');
     }
 };
+

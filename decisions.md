@@ -14,3 +14,12 @@
 - D2, D4, D5: accepted, implemented in migration `2026_10_31_120000_harden_users_table`.
 - D1: bigint kept. Update `ai_rules.md` to match.
 - D3, D6, D7: not part of the auth task.
+
+---
+
+## Video Assets Decisions
+
+| ID | Decision | Why | Rejected Alternative |
+| :--- | :--- | :--- | :--- |
+| **D8** | Normalized `video_assets` table instead of `recording_url` column on `zoom_meetings` | Allows multiple recordings per meeting, supports multiple video providers, tracks duration, and enables standalone video lessons. | Adding `recording_url` string column directly to `zoom_meetings`. |
+| **D9** | Server-side Sanitization to Provider ID | Prevents raw iframe injection attacks, strips tracking parameters, and guarantees frontend player compatibility. | Storing raw URLs and parsing them on the client. |

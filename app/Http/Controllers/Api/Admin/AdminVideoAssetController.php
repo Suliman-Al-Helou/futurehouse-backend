@@ -76,3 +76,4 @@ class AdminVideoAssetController extends Controller
         return response()->noContent();
     }
 }
+

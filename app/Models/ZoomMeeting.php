@@ -32,7 +32,7 @@ class ZoomMeeting extends Model
         return $this->hasMany(ZoomAttendance::class);
     }
 
-    public function videoAssets()
+    public function videoAssets(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(VideoAsset::class);
     }

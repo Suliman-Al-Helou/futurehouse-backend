@@ -72,4 +72,18 @@ _Avoid_: Stale session cache, Manual re-login, Client cookie editing
 A deterministic navigation handler that evaluates authenticated identity claims to direct users to their privileged root interface (`/admin` vs `/dashboard`) while respecting sanitized redirection intents.
 _Avoid_: Hardcoded dashboard redirect, Blind route dispatching
 
+## Video & Live Sessions Domain Terms
+
+**Video Asset**:
+A first-class persistence entity representing an external or hosted video linked to a course curriculum or an archived live meeting.
+_Avoid_: Video link, Meeting attachment, Media URL.
+
+**Provider Video ID**:
+The canonical, stripped, unique identifier issued by the video hosting provider (e.g., 11-character alphanumeric YouTube token), sanitized to exclude protocol, query parameters, tracking tags, and timestamps.
+_Avoid_: Full YouTube URL, Embed string.
+
+**Meeting Recording Replay**:
+A specialized `VideoAsset` categorized with `type: recording` and bound to a completed `ZoomMeeting` record, providing asynchronous playback for students.
+_Avoid_: Zoom archive, Lesson duplicate.
+
 

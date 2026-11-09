@@ -119,6 +119,58 @@ class VideoAssetTest extends TestCase
         ]);
     }
 
+    public function test_admin_can_create_video_asset_from_youtube_live_and_shorts_urls(): void
+    {
+        $liveRes = $this->postJson('/api/admin/video-assets', [
+            'course_id' => $this->course->id,
+            'title' => 'Live Stream Replay',
+            'provider_video_id' => 'https://www.youtube.com/live/dQw4w9WgXcQ?feature=share',
+        ]);
+        $liveRes->assertCreated()->assertJsonPath('provider_video_id', 'dQw4w9WgXcQ');
+
+        $shortsRes = $this->postJson('/api/admin/video-assets', [
+            'course_id' => $this->course->id,
+            'title' => 'Shorts Clip',
+            'provider_video_id' => 'https://www.youtube.com/shorts/dQw4w9WgXcQ',
+        ]);
+        $shortsRes->assertCreated()->assertJsonPath('provider_video_id', 'dQw4w9WgXcQ');
+    }
+
+    public function test_cannot_link_zoom_meeting_from_different_course(): void
+    {
+        $otherCourse = Course::create(['title' => 'Different Course', 'description' => 'Other', 'is_public' => false]);
+        $otherMeeting = ZoomMeeting::create([
+            'course_id' => $otherCourse->id,
+            'title' => 'Other Meeting',
+            'zoom_link' => 'https://zoom.us/j/999999',
+            'starts_at' => now(),
+            'duration_minutes' => 60,
+        ]);
+
+        $response = $this->postJson('/api/admin/video-assets', [
+            'course_id' => $this->course->id,
+            'zoom_meeting_id' => $otherMeeting->id,
+            'title' => 'Cross Course Replay',
+            'provider_video_id' => 'dQw4w9WgXcQ',
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['zoom_meeting_id']);
+    }
+
+    public function test_empty_duration_defaults_to_zero_without_error(): void
+    {
+        $response = $this->postJson('/api/admin/video-assets', [
+            'course_id' => $this->course->id,
+            'title' => 'Zero Duration Video',
+            'provider_video_id' => 'dQw4w9WgXcQ',
+            'duration_seconds' => '',
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('duration_seconds', 0);
+    }
+
     public function test_admin_can_link_video_asset_to_zoom_meeting(): void
     {
         $meeting = ZoomMeeting::create([
