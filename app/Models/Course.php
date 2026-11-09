@@ -33,6 +33,7 @@ class Course extends Model
         'is_popular',
         'price',
         'is_public',
+        'youtube_playlist_id',
         'instructor_id',
     ];
 

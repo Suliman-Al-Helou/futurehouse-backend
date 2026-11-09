@@ -21,6 +21,8 @@ class VideoAsset extends Model
         'provider_video_id',
         'duration_seconds',
         'type',
+        'status',
+        'temp_file_path',
         'created_by',
     ];
 

@@ -33,6 +33,7 @@ class CourseAdminResource extends JsonResource
             'is_popular' => $this->is_popular,
             'price' => $this->price,
             'is_public' => $this->is_public,
+            'youtube_playlist_id' => $this->youtube_playlist_id,
             'instructor' => $this->whenLoaded('instructor', fn () => $this->instructor
                 ? ['id' => $this->instructor->id, 'name' => $this->instructor->name]
                 : null),

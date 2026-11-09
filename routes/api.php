@@ -119,7 +119,14 @@ Route::middleware(['auth:sanctum', 'can:manageAdmin,App\Models\User'])->prefix('
     // Video Assets
     Route::get('/video-assets', [AdminVideoAssetController::class, 'index']);
     Route::post('/video-assets', [AdminVideoAssetController::class, 'store']);
+    Route::post('/video-assets/upload-chunk', [AdminVideoAssetController::class, 'uploadChunk']);
     Route::get('/video-assets/{videoAsset}', [AdminVideoAssetController::class, 'show']);
     Route::put('/video-assets/{videoAsset}', [AdminVideoAssetController::class, 'update']);
     Route::delete('/video-assets/{videoAsset}', [AdminVideoAssetController::class, 'destroy']);
+
+    // YouTube Integration
+    Route::get('/youtube/status', [AdminVideoAssetController::class, 'youtubeStatus']);
+    Route::get('/youtube/auth-url', [AdminVideoAssetController::class, 'youtubeAuthUrl']);
+    Route::post('/youtube/callback', [AdminVideoAssetController::class, 'youtubeCallback']);
+    Route::post('/youtube/disconnect', [AdminVideoAssetController::class, 'youtubeDisconnect']);
 });

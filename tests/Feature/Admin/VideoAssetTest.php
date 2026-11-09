@@ -244,4 +244,58 @@ class VideoAssetTest extends TestCase
         $this->getJson('/api/admin/video-assets')->assertForbidden();
         $this->postJson('/api/admin/video-assets', [])->assertForbidden();
     }
+
+    public function test_admin_can_upload_video_chunks_and_assemble_asset(): void
+    {
+        $uploadId = 'test_upload_' . uniqid();
+        $chunk1 = \Illuminate\Http\UploadedFile::fake()->createWithContent('chunk_0', 'part1-content-');
+        $chunk2 = \Illuminate\Http\UploadedFile::fake()->createWithContent('chunk_1', 'part2-content');
+
+        // Chunk 1 of 2
+        $res1 = $this->postJson('/api/admin/video-assets/upload-chunk', [
+            'chunk' => $chunk1,
+            'chunk_index' => 0,
+            'total_chunks' => 2,
+            'upload_id' => $uploadId,
+            'file_name' => 'lesson.mp4',
+            'course_id' => $this->course->id,
+            'title' => 'Chunked Video Lesson',
+            'type' => 'recording',
+        ]);
+
+        $res1->assertOk()
+            ->assertJsonPath('completed', false)
+            ->assertJsonPath('progress', 50);
+
+        // Chunk 2 of 2
+        $res2 = $this->postJson('/api/admin/video-assets/upload-chunk', [
+            'chunk' => $chunk2,
+            'chunk_index' => 1,
+            'total_chunks' => 2,
+            'upload_id' => $uploadId,
+            'file_name' => 'lesson.mp4',
+            'course_id' => $this->course->id,
+            'title' => 'Chunked Video Lesson',
+            'type' => 'recording',
+        ]);
+
+        $res2->assertCreated()
+            ->assertJsonPath('completed', true)
+            ->assertJsonPath('progress', 100)
+            ->assertJsonPath('video_asset.title', 'Chunked Video Lesson');
+
+        $this->assertDatabaseHas('video_assets', [
+            'course_id' => $this->course->id,
+            'title' => 'Chunked Video Lesson',
+        ]);
+    }
+
+    public function test_admin_can_query_youtube_status_and_auth_url(): void
+    {
+        $statusRes = $this->getJson('/api/admin/youtube/status');
+        $statusRes->assertOk()->assertJsonStructure(['connected', 'channel_title']);
+
+        $authRes = $this->getJson('/api/admin/youtube/auth-url');
+        $authRes->assertOk()->assertJsonStructure(['url']);
+    }
 }

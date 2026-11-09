@@ -21,10 +21,12 @@ class VideoAssetResource extends JsonResource
             'provider_video_id' => $this->provider_video_id,
             'duration_seconds' => $this->duration_seconds,
             'type' => $this->type,
+            'status' => $this->status ?? 'ready',
             'created_by' => $this->created_by,
             'course' => $this->whenLoaded('course', fn () => [
                 'id' => $this->course->id,
                 'title' => $this->course->title,
+                'youtube_playlist_id' => $this->course->youtube_playlist_id,
             ]),
             'zoom_meeting' => $this->whenLoaded('zoomMeeting', fn () => [
                 'id' => $this->zoomMeeting->id,
