@@ -36,8 +36,10 @@ Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
 });
 // ─── Courses (Public) ─────────────────────────────────────
-Route::get('/courses', [CourseController::class, 'index']);
-Route::get('/courses/{course}', [CourseController::class, 'show']);
+Route::middleware('throttle:courses-public')->group(function () {
+    Route::get('/courses', [CourseController::class, 'index']);
+    Route::get('/courses/{course}', [CourseController::class, 'show']);
+});
 Route::get('/instructors', [AdminInstructorController::class, 'index']);
 Route::get('/instructors/{id}', [AdminInstructorController::class, 'show']);
 Route::get('/faqs', [AdminFaqController::class, 'index']);
@@ -48,16 +50,21 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/users/{user}', [UserController::class, 'update']);
     Route::post('/auth/logout', [AuthController::class, 'logout']);
 
-    Route::post('/courses/{course}/enroll', [EnrollmentController::class, 'enroll']);
+    Route::middleware('throttle:course-enroll')->group(function () {
+        Route::post('/courses/{course}/enroll', [EnrollmentController::class, 'enroll']);
+        Route::delete('/courses/{course}/enroll', [EnrollmentController::class, 'unenroll']);
+    });
     Route::get('/courses/{course}/enrollment', [EnrollmentController::class, 'checkEnrollment']);
     Route::get('/my-courses', [EnrollmentController::class, 'myCourses']);
 
-    Route::get('/lessons/{id}/progress', [ProgressController::class, 'show']);
-    Route::post('/lessons/{id}/progress', [ProgressController::class, 'update']);
-    Route::get('/courses/{course}/progress-summary', [ProgressController::class, 'courseSummary']);
-    Route::delete('/courses/{course}/enroll', [EnrollmentController::class, 'unenroll']);
+    Route::middleware('throttle:lesson-progress')->group(function () {
+        Route::get('/lessons/{id}/progress', [ProgressController::class, 'show']);
+        Route::post('/lessons/{id}/progress', [ProgressController::class, 'update']);
+        Route::get('/courses/{course}/progress-summary', [ProgressController::class, 'courseSummary']);
+    });
+
     Route::get('/lessons/{lesson}/task', [TaskController::class, 'show']);
-    Route::post('/lessons/{lesson}/task', [TaskController::class, 'submit']);
+    Route::post('/lessons/{lesson}/task', [TaskController::class, 'submit'])->middleware('throttle:task-submit');
     Route::get('/lessons/{lesson}', [LessonController::class, 'show']);
     Route::get('/zoom-meetings', [ZoomMeetingController::class, 'index']);
     Route::get('/zoom-meetings/attendance-summary', [ZoomMeetingController::class, 'attendanceSummary']);
@@ -73,18 +80,20 @@ Route::middleware(['auth:sanctum', 'can:manageAdmin,App\Models\User'])->prefix('
     Route::get('/enrollments', [AdminEnrollmentController::class, 'index']);
     Route::patch('/enrollments/{enrollment}', [AdminEnrollmentController::class, 'update']);
 
-    // Courses
-    Route::get('/courses', [AdminCourseController::class, 'index']);
-    Route::post('/courses', [AdminCourseController::class, 'store']);
-    Route::get('/courses/{course}', [AdminCourseController::class, 'show']);
-    Route::put('/courses/{course}', [AdminCourseController::class, 'update']);
-    Route::delete('/courses/{course}', [AdminCourseController::class, 'destroy']);
-    Route::get('/courses/{course}/sections', [AdminSectionController::class, 'index']);
-    Route::post('/courses/{course}/sections', [AdminSectionController::class, 'store']);
+    // Courses & Sections (Admin)
+    Route::middleware('throttle:courses-admin')->group(function () {
+        Route::get('/courses', [AdminCourseController::class, 'index']);
+        Route::post('/courses', [AdminCourseController::class, 'store']);
+        Route::get('/courses/{course}', [AdminCourseController::class, 'show']);
+        Route::put('/courses/{course}', [AdminCourseController::class, 'update']);
+        Route::delete('/courses/{course}', [AdminCourseController::class, 'destroy']);
+        Route::get('/courses/{course}/sections', [AdminSectionController::class, 'index']);
+        Route::post('/courses/{course}/sections', [AdminSectionController::class, 'store']);
 
-    // Sections
-    Route::delete('/sections/{section}', [AdminSectionController::class, 'destroy']);
-    Route::post('/sections/{section}/lessons', [AdminLessonController::class, 'store']);
+        // Sections
+        Route::delete('/sections/{section}', [AdminSectionController::class, 'destroy']);
+        Route::post('/sections/{section}/lessons', [AdminLessonController::class, 'store']);
+    });
 
     // Lessons
     Route::put('/lessons/{lesson}', [AdminLessonController::class, 'update']);

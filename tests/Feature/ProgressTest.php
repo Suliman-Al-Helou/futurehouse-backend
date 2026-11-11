@@ -159,4 +159,99 @@ class ProgressTest extends TestCase
         $this->assertTrue($response->json('course_complete'));
         $this->assertSame(100, $response->json('percent'));
     }
+
+    public function test_student_can_update_lesson_progress_with_valid_data(): void
+    {
+        $student = User::factory()->student()->create();
+        $course = Course::factory()->free()->published()->create();
+        $section = Section::factory()->create(['course_id' => $course->id]);
+        $lesson = Lesson::factory()->create(['section_id' => $section->id]);
+
+        Sanctum::actingAs($student);
+
+        $response = $this->postJson("/api/lessons/{$lesson->id}/progress", [
+            'watched_percent' => 50,
+            'last_position' => 120,
+        ]);
+
+        $response->assertOk()
+            ->assertJson([
+                'watched_percent' => 50,
+                'completed' => false,
+                'task_unlocked' => false,
+            ]);
+
+        $this->assertDatabaseHas('user_lesson_progress', [
+            'user_id' => $student->id,
+            'lesson_id' => $lesson->id,
+            'watched_percent' => 50,
+            'last_position' => 120,
+            'completed' => false,
+        ]);
+    }
+
+    public function test_student_completes_lesson_when_watched_percent_reaches_80(): void
+    {
+        $student = User::factory()->student()->create();
+        $course = Course::factory()->free()->published()->create();
+        $section = Section::factory()->create(['course_id' => $course->id]);
+        $lesson = Lesson::factory()->create(['section_id' => $section->id]);
+
+        Sanctum::actingAs($student);
+
+        $response = $this->postJson("/api/lessons/{$lesson->id}/progress", [
+            'watched_percent' => 85,
+            'last_position' => 200,
+        ]);
+
+        $response->assertOk()
+            ->assertJson([
+                'watched_percent' => 85,
+                'completed' => true,
+                'task_unlocked' => true,
+            ]);
+
+        $this->assertDatabaseHas('user_lesson_progress', [
+            'user_id' => $student->id,
+            'lesson_id' => $lesson->id,
+            'completed' => true,
+        ]);
+    }
+
+    public function test_update_lesson_progress_validation_requires_fields(): void
+    {
+        $student = User::factory()->student()->create();
+        $course = Course::factory()->free()->published()->create();
+        $section = Section::factory()->create(['course_id' => $course->id]);
+        $lesson = Lesson::factory()->create(['section_id' => $section->id]);
+
+        Sanctum::actingAs($student);
+
+        $response = $this->postJson("/api/lessons/{$lesson->id}/progress", []);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['watched_percent', 'last_position']);
+    }
+
+    public function test_update_lesson_progress_validation_rejects_out_of_range_and_invalid_types(): void
+    {
+        $student = User::factory()->student()->create();
+        $course = Course::factory()->free()->published()->create();
+        $section = Section::factory()->create(['course_id' => $course->id]);
+        $lesson = Lesson::factory()->create(['section_id' => $section->id]);
+
+        Sanctum::actingAs($student);
+
+        $this->postJson("/api/lessons/{$lesson->id}/progress", [
+            'watched_percent' => 150,
+            'last_position' => -10,
+        ])->assertStatus(422)
+            ->assertJsonValidationErrors(['watched_percent', 'last_position']);
+
+        $this->postJson("/api/lessons/{$lesson->id}/progress", [
+            'watched_percent' => -5,
+            'last_position' => 'not-a-number',
+        ])->assertStatus(422)
+            ->assertJsonValidationErrors(['watched_percent', 'last_position']);
+    }
 }

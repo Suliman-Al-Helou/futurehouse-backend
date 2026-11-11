@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\UpdateLessonProgressRequest;
 use App\Models\Course;
 use App\Models\Lesson;
 use App\Models\UserLessonProgress;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 
@@ -16,12 +16,9 @@ class ProgressController extends Controller
      * POST /api/lessons/{id}/progress
      * يحفظ تقدم المستخدم في الفيديو
      */
-    public function update(Request $request, $lessonId)
+    public function update(UpdateLessonProgressRequest $request, $lessonId)
     {
-        $request->validate([
-            'watched_percent' => 'required|numeric|min:0|max:100',
-            'last_position' => 'required|numeric|min:0',
-        ]);
+        $validated = $request->validated();
 
         $lesson = Lesson::findOrFail($lessonId);
         $user = Auth::user();
@@ -32,13 +29,13 @@ class ProgressController extends Controller
             ->where('lesson_id', $lesson->id)
             ->first();
 
-        $best = max((float) $request->watched_percent, $existing?->watched_percent ?? 0);
+        $best = max((float) $validated['watched_percent'], $existing?->watched_percent ?? 0);
 
         $progress = UserLessonProgress::updateOrCreate(
             ['user_id' => $user->id, 'lesson_id' => $lesson->id],
             [
                 'watched_percent' => $best,
-                'last_position' => $request->last_position,
+                'last_position' => $validated['last_position'],
                 'completed' => $best >= 80,
             ]
         );
