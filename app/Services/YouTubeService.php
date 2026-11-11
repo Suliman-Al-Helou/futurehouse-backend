@@ -27,9 +27,11 @@ class YouTubeService
         $client->setClientId((string) config('services.google.client_id', env('GOOGLE_CLIENT_ID')));
         $client->setClientSecret((string) config('services.google.client_secret', env('GOOGLE_CLIENT_SECRET')));
         
-        // Redirect back to admin dashboard or API callback
-        $redirectUri = env('GOOGLE_REDIRECT_URI', env('FRONTEND_URL', 'http://localhost:3000') . '/admin?tab=zoom&youtube_callback=1');
+        // Redirect back to admin dashboard (clean URI without query strings for Google Cloud Console compatibility)
+        $frontendUrl = rtrim((string) env('FRONTEND_URL', 'http://localhost:3000'), '/');
+        $redirectUri = (string) env('GOOGLE_REDIRECT_URI', $frontendUrl . '/admin');
         $client->setRedirectUri($redirectUri);
+        $client->setState('youtube_callback');
 
         $client->addScope([
             YouTube::YOUTUBE,
