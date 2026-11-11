@@ -13,6 +13,7 @@ use App\Services\CourseService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
+use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 
 class AdminCourseController extends Controller
 {
@@ -51,9 +52,21 @@ class AdminCourseController extends Controller
     }
 
     /** Deletes a course. */
-    public function destroy(Course $course): Response
+    public function destroy(Course $course): Response|JsonResponse
     {
-        $this->courseService->delete($course);
+        if ($course->enrollments()->exists()) {
+            return response()->json([
+                'message' => 'Cannot delete course because students are enrolled.',
+            ], 409);
+        }
+
+        try {
+            $this->courseService->delete($course);
+        } catch (ConflictHttpException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], 409);
+        }
 
         return response()->noContent();
     }

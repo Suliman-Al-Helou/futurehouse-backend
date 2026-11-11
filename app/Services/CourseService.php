@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Models\Course;
 use App\Models\Section;
 use App\Support\ContentCache;
+use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 
 final class CourseService
 {
@@ -46,6 +47,10 @@ final class CourseService
     /** Deletes a course (sections/lessons cascade at DB level) and invalidates cache. */
     public function delete(Course $course): void
     {
+        if ($course->enrollments()->exists()) {
+            throw new ConflictHttpException('Cannot delete course because students are enrolled.');
+        }
+
         $course->delete();
         ContentCache::forgetCourses();
     }

@@ -13,8 +13,10 @@ use App\Models\Lesson;
 use App\Models\Section;
 use App\Models\Task;
 use App\Models\User;
+use App\Services\CourseService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
+use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 use Tests\TestCase;
 
 class AdminRefactorTest extends TestCase
@@ -131,6 +133,50 @@ class AdminRefactorTest extends TestCase
 
         $this->deleteJson("/api/admin/courses/{$course->id}")->assertNoContent();
         $this->assertDatabaseMissing('courses', ['id' => $course->id]);
+    }
+
+    public function test_admin_cannot_delete_course_with_active_enrollments(): void
+    {
+        $course = Course::create(['title' => 'Course With Enrolled Students', 'description' => 'Desc']);
+        $student = User::factory()->student()->create();
+        Enrollment::create([
+            'user_id' => $student->id,
+            'course_id' => $course->id,
+            'status' => 'approved',
+        ]);
+
+        $response = $this->deleteJson("/api/admin/courses/{$course->id}");
+
+        $response->assertStatus(409)
+            ->assertJson([
+                'message' => 'Cannot delete course because students are enrolled.',
+            ]);
+
+        $this->assertDatabaseHas('courses', ['id' => $course->id]);
+
+        // Also verify service layer directly throws ConflictHttpException
+        $this->expectException(ConflictHttpException::class);
+        app(CourseService::class)->delete($course);
+    }
+
+    public function test_admin_cannot_delete_course_with_pending_enrollments(): void
+    {
+        $course = Course::create(['title' => 'Course With Pending Students', 'description' => 'Desc']);
+        $student = User::factory()->student()->create();
+        Enrollment::create([
+            'user_id' => $student->id,
+            'course_id' => $course->id,
+            'status' => 'pending',
+        ]);
+
+        $response = $this->deleteJson("/api/admin/courses/{$course->id}");
+
+        $response->assertStatus(409)
+            ->assertJson([
+                'message' => 'Cannot delete course because students are enrolled.',
+            ]);
+
+        $this->assertDatabaseHas('courses', ['id' => $course->id]);
     }
 
     public function test_admin_can_view_courses_overview(): void

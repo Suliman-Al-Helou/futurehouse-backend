@@ -27,7 +27,7 @@ class ProgressController extends Controller
         $user = Auth::user();
 
         Gate::authorize('watchLesson', [$lesson->getCourse(), $lesson]);
-        
+
         $existing = UserLessonProgress::where('user_id', $user->id)
             ->where('lesson_id', $lesson->id)
             ->first();
@@ -79,8 +79,7 @@ class ProgressController extends Controller
         $courseId = $course->id;
         $user = Auth::user();
 
-        $enrolled = $user->enrollments()->where('course_id', $courseId)->exists();
-        if (! $enrolled) {
+        if (! $course->isFree() && ! $user->enrollments()->where('course_id', $courseId)->exists()) {
             return response()->json(['message' => 'غير مشترك'], 403);
         }
 
@@ -95,7 +94,7 @@ class ProgressController extends Controller
 
         $totalLessons = $lessonIds->count();
         $percent = $totalLessons > 0
-            ? round(($completedCount / $totalLessons) * 100)
+            ? (int) round(($completedCount / $totalLessons) * 100)
             : 0;
 
         return response()->json([

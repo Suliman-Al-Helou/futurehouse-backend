@@ -27,11 +27,6 @@ class Lesson extends Model
         'order' => 'integer',
     ];
 
-    public function watchLesson(User $user, Course $course, Lesson $lesson): bool
-    {
-        return $lesson->isPreview() || $this->watch($user, $course);
-    }
-
     // الدرس ينتمي لفصل
     public function section()
     {

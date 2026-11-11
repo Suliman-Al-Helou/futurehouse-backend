@@ -71,7 +71,10 @@ final class ZoomService
      */
     public function setAttendance(ZoomMeeting $meeting, User $user, bool $attended): void
     {
-        $enrolled = Enrollment::where('user_id', $user->id)
+        $meeting->loadMissing('course');
+        $isFree = (bool) $meeting->course?->isFree();
+
+        $enrolled = $isFree || Enrollment::where('user_id', $user->id)
             ->where('course_id', $meeting->course_id)
             ->where('status', 'approved')
             ->exists();

@@ -216,4 +216,113 @@ class CourseTest extends TestCase
         $course->load('instructor');
         $this->assertSame('Sarah Connor', $course->instructor_name);
     }
+
+    public function test_public_courses_index_applies_limit_parameter(): void
+    {
+        for ($i = 1; $i <= 4; $i++) {
+            Course::create([
+                'title' => "Course {$i}",
+                'description' => "Desc {$i}",
+                'status' => 'published',
+            ]);
+        }
+
+        $response = $this->getJson('/api/courses?limit=2');
+
+        $response->assertOk()
+            ->assertJsonCount(2, 'data');
+    }
+
+    public function test_public_courses_index_caches_resolved_resource_array_keyed_by_limit(): void
+    {
+        for ($i = 1; $i <= 3; $i++) {
+            Course::create([
+                'title' => "Course {$i}",
+                'description' => "Desc {$i}",
+                'status' => 'published',
+            ]);
+        }
+
+        $this->getJson('/api/courses?limit=2')->assertOk();
+
+        $cacheKey = 'courses:published:all:limit:2';
+        $this->assertTrue(Cache::has($cacheKey));
+
+        $cachedData = Cache::get($cacheKey);
+        $this->assertIsArray($cachedData);
+        $this->assertCount(2, $cachedData);
+        $this->assertIsArray($cachedData[0]);
+        $this->assertArrayHasKey('id', $cachedData[0]);
+        $this->assertArrayHasKey('title', $cachedData[0]);
+
+        // Default call without limit uses the base cache key
+        $this->getJson('/api/courses')->assertOk();
+        $this->assertTrue(Cache::has('courses:published:all'));
+        $cachedAll = Cache::get('courses:published:all');
+        $this->assertIsArray($cachedAll);
+        $this->assertCount(3, $cachedAll);
+    }
+
+    public function test_public_courses_index_invalidates_dynamic_limit_cache_keys_on_content_change(): void
+    {
+        for ($i = 1; $i <= 3; $i++) {
+            Course::create([
+                'title' => "Course {$i}",
+                'description' => "Desc {$i}",
+                'status' => 'published',
+            ]);
+        }
+
+        $this->getJson('/api/courses?limit=2')->assertOk();
+        $this->assertTrue(Cache::has('courses:published:all:limit:2'));
+
+        // Creating a new course triggers ContentCache::forgetCourses()
+        Course::create([
+            'title' => 'Course 4',
+            'description' => 'Desc 4',
+            'status' => 'published',
+        ]);
+
+        $this->assertFalse(Cache::has('courses:published:all:limit:2'));
+        $this->assertFalse(Cache::has('courses:published:all'));
+    }
+
+    public function test_public_courses_index_ignores_non_positive_limit(): void
+    {
+        for ($i = 1; $i <= 3; $i++) {
+            Course::create([
+                'title' => "Course {$i}",
+                'description' => "Desc {$i}",
+                'status' => 'published',
+            ]);
+        }
+
+        $responseNeg = $this->getJson('/api/courses?limit=-5');
+        $responseNeg->assertOk()->assertJsonCount(3, 'data');
+
+        $responseZero = $this->getJson('/api/courses?limit=0');
+        $responseZero->assertOk()->assertJsonCount(3, 'data');
+
+        $responseStr = $this->getJson('/api/courses?limit=abc');
+        $responseStr->assertOk()->assertJsonCount(3, 'data');
+    }
+
+    public function test_public_courses_index_works_with_file_cache_store(): void
+    {
+        config(['cache.default' => 'file']);
+
+        Course::create([
+            'title' => 'File Cached Course',
+            'description' => 'Desc',
+            'status' => 'published',
+        ]);
+
+        $response = $this->getJson('/api/courses?limit=1');
+        $response->assertOk()->assertJsonCount(1, 'data');
+
+        // Second hit loads from file cache, verifying unserialize into array without __PHP_Incomplete_Class
+        $response2 = $this->getJson('/api/courses?limit=1');
+        $response2->assertOk()->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.title', 'File Cached Course');
+    }
 }
