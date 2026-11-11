@@ -67,6 +67,7 @@ class YouTubeService
 
         // Fetch channel name for display from YouTube
         $channelTitle = null;
+        $fetchError = null;
         try {
             $youtube = new YouTube($client);
             $channelsResponse = $youtube->channels->listChannels('snippet', ['mine' => true]);
@@ -75,13 +76,18 @@ class YouTubeService
                 $channelTitle = $items[0]->getSnippet()->getTitle();
             }
         } catch (\Throwable $e) {
-            Log::warning('Failed fetching YouTube channel details: ' . $e->getMessage());
+            $fetchError = $e->getMessage();
+            Log::warning('Failed fetching YouTube channel details: ' . $fetchError);
         }
 
         if (blank($channelTitle)) {
             // Do NOT consider connected if no YouTube channel exists on this Google account
             PlatformSetting::set('youtube_refresh_token', null);
             PlatformSetting::set('youtube_channel_title', null);
+
+            if ($fetchError && str_contains(strtolower($fetchError), 'disabled')) {
+                throw new \RuntimeException('خدمة YouTube Data API v3 غير مفعلة في مشروعك على Google Cloud. يرجى الضغط على تفعيل (Enable) في Google Cloud Console ثم إعادة المحاولة.');
+            }
 
             throw new \RuntimeException('تم توثيق حساب Google بنجاح، ولكن هذا الحساب لا يمتلك قناة على YouTube. يرجى الدخول إلى YouTube وإنشاء قناة أولاً ثم إعادة المحاولة.');
         }

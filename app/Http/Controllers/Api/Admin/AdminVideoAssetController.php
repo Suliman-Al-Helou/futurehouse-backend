@@ -224,12 +224,11 @@ class AdminVideoAssetController extends Controller
         if ($state && $state !== 'youtube_callback' && ! Cache::has("yt_oauth_state_{$state}")) {
             return response()->json(['message' => 'رمز التحقق (CSRF State) منتهي الصلاحية أو غير صالح.'], 403);
         }
-        if ($state && Cache::has("yt_oauth_state_{$state}")) {
-            Cache::forget("yt_oauth_state_{$state}");
-        }
-
         try {
             $result = $this->youtubeService->handleCallback($request->input('code'));
+            if ($state && Cache::has("yt_oauth_state_{$state}")) {
+                Cache::forget("yt_oauth_state_{$state}");
+            }
             return response()->json($result);
         } catch (\Throwable $e) {
             return response()->json(['message' => $e->getMessage()], 422);
