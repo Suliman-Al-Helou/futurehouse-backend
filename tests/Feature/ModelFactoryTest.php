@@ -28,6 +28,8 @@ class ModelFactoryTest extends TestCase
         ]);
         $this->assertNotNull($course->description);
         $this->assertIsArray($course->what_you_learn);
+        $this->assertTrue($course->isFree());
+        $this->assertEquals(0, $course->price);
     }
 
     public function test_course_factory_states(): void

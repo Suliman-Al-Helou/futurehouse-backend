@@ -33,7 +33,7 @@ class CourseFactory extends Factory
             'target_audience' => ['Beginner developers', 'Intermediate engineers'],
             'rating' => fake()->randomFloat(1, 3, 5),
             'is_popular' => fake()->boolean(),
-            'price' => fake()->randomFloat(2, 0, 199.99),
+            'price' => 0.0,
             'is_public' => true,
             'instructor_id' => null,
             'students_count' => 0,

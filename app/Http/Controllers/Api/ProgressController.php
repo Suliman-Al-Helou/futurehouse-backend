@@ -35,7 +35,7 @@ class ProgressController extends Controller
             ['user_id' => $user->id, 'lesson_id' => $lesson->id],
             [
                 'watched_percent' => $best,
-                'last_position' => $validated['last_position'],
+                'last_position' => (int) round((float) $validated['last_position']),
                 'completed' => $best >= 80,
             ]
         );

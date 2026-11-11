@@ -254,4 +254,60 @@ class ProgressTest extends TestCase
         ])->assertStatus(422)
             ->assertJsonValidationErrors(['watched_percent', 'last_position']);
     }
+
+    public function test_update_lesson_progress_safely_rounds_float_last_position(): void
+    {
+        $student = User::factory()->student()->create();
+        $course = Course::factory()->free()->published()->create();
+        $section = Section::factory()->create(['course_id' => $course->id]);
+        $lesson = Lesson::factory()->create(['section_id' => $section->id]);
+
+        Sanctum::actingAs($student);
+
+        $response = $this->postJson("/api/lessons/{$lesson->id}/progress", [
+            'watched_percent' => 45.5,
+            'last_position' => 125.8,
+        ]);
+
+        $response->assertOk();
+
+        $this->assertDatabaseHas('user_lesson_progress', [
+            'user_id' => $student->id,
+            'lesson_id' => $lesson->id,
+            'last_position' => 126,
+        ]);
+    }
+
+    public function test_progress_does_not_decrease_when_lower_percent_is_sent(): void
+    {
+        $student = User::factory()->student()->create();
+        $course = Course::factory()->free()->published()->create();
+        $section = Section::factory()->create(['course_id' => $course->id]);
+        $lesson = Lesson::factory()->create(['section_id' => $section->id]);
+
+        Sanctum::actingAs($student);
+
+        $this->postJson("/api/lessons/{$lesson->id}/progress", [
+            'watched_percent' => 85,
+            'last_position' => 300,
+        ])->assertOk();
+
+        $response = $this->postJson("/api/lessons/{$lesson->id}/progress", [
+            'watched_percent' => 30,
+            'last_position' => 100,
+        ]);
+
+        $response->assertOk()
+            ->assertJson([
+                'watched_percent' => 85,
+                'completed' => true,
+            ]);
+
+        $this->assertDatabaseHas('user_lesson_progress', [
+            'user_id' => $student->id,
+            'lesson_id' => $lesson->id,
+            'watched_percent' => 85,
+            'completed' => true,
+        ]);
+    }
 }
