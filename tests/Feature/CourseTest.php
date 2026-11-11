@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Http\Resources\CourseDetailResource;
 use App\Models\Course;
 use App\Models\Enrollment;
 use App\Models\Instructor;
@@ -324,5 +325,62 @@ class CourseTest extends TestCase
         $response2 = $this->getJson('/api/courses?limit=1');
         $response2->assertOk()->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.title', 'File Cached Course');
+    }
+
+    public function test_public_course_show_students_count_uses_approved_count_over_cached_counter(): void
+    {
+        $course = Course::create([
+            'title' => 'Counter Test Course',
+            'description' => 'Desc',
+            'status' => 'published',
+            'students_count' => 99,
+        ]);
+
+        $student1 = User::factory()->student()->create();
+        $student2 = User::factory()->student()->create();
+        $student3 = User::factory()->student()->create();
+        $student4 = User::factory()->student()->create();
+
+        // 2 approved
+        Enrollment::create(['user_id' => $student1->id, 'course_id' => $course->id, 'status' => 'approved']);
+        Enrollment::create(['user_id' => $student2->id, 'course_id' => $course->id, 'status' => 'approved']);
+        // 1 pending
+        Enrollment::create(['user_id' => $student3->id, 'course_id' => $course->id, 'status' => 'pending']);
+        // 1 rejected
+        Enrollment::create(['user_id' => $student4->id, 'course_id' => $course->id, 'status' => 'rejected']);
+
+        $response = $this->getJson("/api/courses/{$course->id}");
+
+        $response->assertOk()
+            ->assertJsonPath('data.students_count', 2);
+    }
+
+    public function test_public_course_show_students_count_falls_back_when_no_enrollments(): void
+    {
+        $course = Course::create([
+            'title' => 'Empty Course',
+            'description' => 'Desc',
+            'status' => 'published',
+            'students_count' => 0,
+        ]);
+
+        $response = $this->getJson("/api/courses/{$course->id}");
+
+        $response->assertOk()
+            ->assertJsonPath('data.students_count', 0);
+    }
+
+    public function test_course_detail_resource_falls_back_to_students_count_attribute_when_approved_count_not_loaded(): void
+    {
+        $course = Course::create([
+            'title' => 'Direct Resource Course',
+            'description' => 'Desc',
+            'students_count' => 42,
+        ]);
+
+        $resource = new CourseDetailResource($course);
+        $array = $resource->toArray(request());
+
+        $this->assertSame(42, $array['students_count']);
     }
 }

@@ -32,13 +32,16 @@ class AdminCourseController extends Controller
     {
         $course = $this->courseService->create($request->validated());
 
-        return response()->json(new CourseAdminResource($course), 201);
+        return response()->json(
+            new CourseAdminResource($course->load('instructor')->loadCount(Course::adminCounts())),
+            201
+        );
     }
 
-    /** Single course with curriculum for the edit modal. */
+    /** Single course with instructor and counts for the edit modal. */
     public function show(Course $course): JsonResponse
     {
-        $course->load(['instructor', 'sections.lessons'])->loadCount(Course::adminCounts());
+        $course->load(['instructor'])->loadCount(Course::adminCounts());
 
         return response()->json(new CourseAdminResource($course));
     }
@@ -46,15 +49,17 @@ class AdminCourseController extends Controller
     /** Updates a course. */
     public function update(UpdateCourseRequest $request, Course $course): JsonResponse
     {
+        $updated = $this->courseService->update($course, $request->validated());
+
         return response()->json(
-            new CourseAdminResource($this->courseService->update($course, $request->validated()))
+            new CourseAdminResource($updated->load('instructor')->loadCount(Course::adminCounts()))
         );
     }
 
     /** Deletes a course. */
     public function destroy(Course $course): Response|JsonResponse
     {
-        if ($course->enrollments()->exists()) {
+        if ($course->enrollments()->withTrashed()->exists()) {
             return response()->json([
                 'message' => 'Cannot delete course because students are enrolled.',
             ], 409);
@@ -69,11 +74,5 @@ class AdminCourseController extends Controller
         }
 
         return response()->noContent();
-    }
-
-    /** Lightweight overview list (same eager loading as the main list). */
-    public function overview(): AnonymousResourceCollection
-    {
-        return CourseAdminResource::collection(Course::forAdminList()->get());
     }
 }

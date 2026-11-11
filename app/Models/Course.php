@@ -7,6 +7,7 @@ use App\Support\ContentCache;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Course extends Model
 {
@@ -86,7 +87,7 @@ class Course extends Model
             'sections.lessons' => fn ($query) => $query
                 ->select('id', 'section_id', 'title', 'duration', 'order', 'is_preview')
                 ->orderBy('order'),
-        ]);
+        ])->loadCount(['enrollments as approved_count' => fn ($q) => $q->where('status', 'approved')]);
     }
 
     /** Query scope version for public details eager loading. */
@@ -97,7 +98,7 @@ class Course extends Model
             'sections.lessons' => fn ($query) => $query
                 ->select('id', 'section_id', 'title', 'duration', 'order', 'is_preview')
                 ->orderBy('order'),
-        ]);
+        ])->withCount(['enrollments as approved_count' => fn ($q) => $q->where('status', 'approved')]);
     }
 
     public function getInstructorNameAttribute(): ?string
@@ -130,7 +131,7 @@ class Course extends Model
         return $this->is_public;
     }
 
-    public function videoAssets(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function videoAssets(): HasMany
     {
         return $this->hasMany(VideoAsset::class);
     }

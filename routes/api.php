@@ -106,8 +106,6 @@ Route::middleware(['auth:sanctum', 'can:manageAdmin,App\Models\User'])->prefix('
     Route::put('/faqs/{faq}', [AdminFaqController::class, 'update']);
     Route::delete('/faqs/{faq}', [AdminFaqController::class, 'destroy']);
 
-    Route::get('/courses-overview', [AdminCourseController::class, 'overview']);
-
     Route::get('/zoom-meetings', [AdminZoomMeetingController::class, 'index']);
     Route::post('/zoom-meetings', [AdminZoomMeetingController::class, 'store']);
     Route::put('/zoom-meetings/{zoomMeeting}', [AdminZoomMeetingController::class, 'update']);

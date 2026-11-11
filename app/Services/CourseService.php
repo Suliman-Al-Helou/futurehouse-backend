@@ -47,7 +47,7 @@ final class CourseService
     /** Deletes a course (sections/lessons cascade at DB level) and invalidates cache. */
     public function delete(Course $course): void
     {
-        if ($course->enrollments()->exists()) {
+        if ($course->enrollments()->withTrashed()->exists()) {
             throw new ConflictHttpException('Cannot delete course because students are enrolled.');
         }
 

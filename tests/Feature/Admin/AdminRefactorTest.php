@@ -15,6 +15,7 @@ use App\Models\Task;
 use App\Models\User;
 use App\Services\CourseService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Laravel\Sanctum\Sanctum;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 use Tests\TestCase;
@@ -100,19 +101,88 @@ class AdminRefactorTest extends TestCase
             'instructor_id' => $ins->id,
             'price' => 50,
             'is_public' => false,
+            'what_you_learn' => ['Item 1', 'Item 2'],
+            'requirements' => ['Req 1'],
+            'target_audience' => ['Audience 1'],
         ];
 
-        $this->postJson('/api/admin/courses', $payload)->assertCreated();
+        $response = $this->postJson('/api/admin/courses', $payload)->assertCreated();
         $this->assertDatabaseHas('courses', ['title' => 'New Course']);
+        $response->assertJsonPath('instructor.id', $ins->id)
+            ->assertJsonPath('instructor.name', 'Instructor 1')
+            ->assertJsonPath('what_you_learn.0', 'Item 1');
+    }
+
+    public function test_admin_store_course_validates_nested_arrays(): void
+    {
+        $ins = Instructor::create(['name' => 'Instructor 1']);
+
+        $basePayload = [
+            'title' => 'Validation Test Course',
+            'description' => 'Course description is long enough',
+            'level' => 'beginner',
+            'status' => 'published',
+            'instructor_id' => $ins->id,
+        ];
+
+        // Item exceeds 500 chars
+        $this->postJson('/api/admin/courses', array_merge($basePayload, [
+            'what_you_learn' => [str_repeat('a', 501)],
+        ]))->assertStatus(422)
+            ->assertJsonValidationErrors(['what_you_learn.0']);
+
+        // Non-array passed to requirements
+        $this->postJson('/api/admin/courses', array_merge($basePayload, [
+            'requirements' => 'not-an-array',
+        ]))->assertStatus(422)
+            ->assertJsonValidationErrors(['requirements']);
+
+        // Item not a string
+        $this->postJson('/api/admin/courses', array_merge($basePayload, [
+            'target_audience' => [['nested' => 'array']],
+        ]))->assertStatus(422)
+            ->assertJsonValidationErrors(['target_audience.0']);
     }
 
     public function test_admin_can_show_course(): void
     {
-        $course = Course::create(['title' => 'Show Course', 'description' => 'Desc']);
+        $ins = Instructor::create(['name' => 'Show Instructor']);
+        $course = Course::create([
+            'title' => 'Show Course',
+            'description' => 'Desc',
+            'instructor_id' => $ins->id,
+        ]);
 
-        $this->getJson("/api/admin/courses/{$course->id}")
+        $section = Section::create(['course_id' => $course->id, 'title' => 'Sec', 'order' => 1]);
+        Lesson::create([
+            'section_id' => $section->id,
+            'title' => 'Les',
+            'duration' => 10,
+            'order' => 1,
+            'is_preview' => false,
+        ]);
+
+        $student = User::factory()->student()->create();
+        Enrollment::create(['user_id' => $student->id, 'course_id' => $course->id, 'status' => 'approved']);
+
+        DB::enableQueryLog();
+
+        $response = $this->getJson("/api/admin/courses/{$course->id}")
             ->assertOk()
-            ->assertJsonPath('title', 'Show Course');
+            ->assertJsonPath('title', 'Show Course')
+            ->assertJsonPath('instructor.id', $ins->id)
+            ->assertJsonPath('instructor.name', 'Show Instructor')
+            ->assertJsonPath('students_count', 1)
+            ->assertJsonPath('enrollments_count', 1)
+            ->assertJsonMissingPath('sections')
+            ->assertJsonMissingPath('lessons');
+
+        $queries = DB::getQueryLog();
+        $queriesString = collect($queries)->pluck('query')->implode(' ');
+
+        // Verify sections and lessons tables were NOT queried during admin show
+        $this->assertStringNotContainsString('sections', $queriesString);
+        $this->assertStringNotContainsString('lessons', $queriesString);
     }
 
     public function test_admin_can_update_course(): void
@@ -125,6 +195,108 @@ class AdminRefactorTest extends TestCase
         ])->assertOk();
 
         $this->assertDatabaseHas('courses', ['id' => $course->id, 'title' => 'Updated Title']);
+    }
+
+    public function test_admin_update_course_loads_instructor_and_handles_nullable_instructor_id(): void
+    {
+        $ins1 = Instructor::create(['name' => 'First Instructor']);
+        $ins2 = Instructor::create(['name' => 'Second Instructor']);
+
+        $course = Course::create([
+            'title' => 'Course With Instructor',
+            'description' => 'Long enough description for update test',
+            'instructor_id' => $ins1->id,
+        ]);
+
+        // 1. Update instructor_id to null
+        $responseNull = $this->putJson("/api/admin/courses/{$course->id}", [
+            'instructor_id' => null,
+        ])->assertOk();
+
+        $responseNull->assertJsonPath('instructor', null);
+        $this->assertDatabaseHas('courses', ['id' => $course->id, 'instructor_id' => null]);
+
+        // 2. Update instructor_id to another instructor
+        $responseNew = $this->putJson("/api/admin/courses/{$course->id}", [
+            'instructor_id' => $ins2->id,
+        ])->assertOk();
+
+        $responseNew->assertJsonPath('instructor.id', $ins2->id)
+            ->assertJsonPath('instructor.name', 'Second Instructor');
+        $this->assertDatabaseHas('courses', ['id' => $course->id, 'instructor_id' => $ins2->id]);
+
+        // 3. Update with invalid instructor_id fails validation
+        $this->putJson("/api/admin/courses/{$course->id}", [
+            'instructor_id' => 99999,
+        ])->assertStatus(422)
+            ->assertJsonValidationErrors(['instructor_id']);
+
+        // 4. Update with nested array exceeding 500 chars fails validation
+        $this->putJson("/api/admin/courses/{$course->id}", [
+            'what_you_learn' => [str_repeat('z', 501)],
+        ])->assertStatus(422)
+            ->assertJsonValidationErrors(['what_you_learn.0']);
+
+        // 5. Update with valid nested arrays succeeds
+        $this->putJson("/api/admin/courses/{$course->id}", [
+            'what_you_learn' => ['Clean Code', 'TDD'],
+            'requirements' => ['PHP 8.4'],
+            'target_audience' => ['Backend Engineers'],
+        ])->assertOk()
+            ->assertJsonPath('what_you_learn.0', 'Clean Code')
+            ->assertJsonPath('requirements.0', 'PHP 8.4')
+            ->assertJsonPath('target_audience.0', 'Backend Engineers');
+
+        // 6. Update without instructor_id retains current instructor
+        $this->putJson("/api/admin/courses/{$course->id}", [
+            'title' => 'Renamed Course',
+        ])->assertOk()
+            ->assertJsonPath('instructor.id', $ins2->id)
+            ->assertJsonPath('instructor.name', 'Second Instructor');
+    }
+
+    public function test_admin_update_course_preserves_counts_and_curriculum_efficiency(): void
+    {
+        $ins = Instructor::create(['name' => 'Counts Instructor']);
+        $course = Course::create([
+            'title' => 'Course For Update Counts',
+            'description' => 'Description long enough for testing update counts',
+            'instructor_id' => $ins->id,
+            'students_count' => 0,
+        ]);
+
+        $section = Section::create(['course_id' => $course->id, 'title' => 'Curriculum Section', 'order' => 1]);
+        Lesson::create([
+            'section_id' => $section->id,
+            'title' => 'Curriculum Lesson',
+            'duration' => 15,
+            'order' => 1,
+            'is_preview' => false,
+        ]);
+
+        $student1 = User::factory()->student()->create();
+        $student2 = User::factory()->student()->create();
+        Enrollment::create(['user_id' => $student1->id, 'course_id' => $course->id, 'status' => 'approved']);
+        Enrollment::create(['user_id' => $student2->id, 'course_id' => $course->id, 'status' => 'pending']);
+
+        DB::enableQueryLog();
+
+        $response = $this->putJson("/api/admin/courses/{$course->id}", [
+            'title' => 'Updated Title With Preserved Counts',
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('title', 'Updated Title With Preserved Counts')
+            ->assertJsonPath('instructor.id', $ins->id)
+            ->assertJsonPath('instructor.name', 'Counts Instructor')
+            ->assertJsonPath('students_count', 1)
+            ->assertJsonPath('enrollments_count', 2);
+
+        $queries = DB::getQueryLog();
+        $queriesString = collect($queries)->pluck('query')->implode(' ');
+
+        $this->assertStringNotContainsString('sections', $queriesString);
+        $this->assertStringNotContainsString('lessons', $queriesString);
     }
 
     public function test_admin_can_delete_course(): void
@@ -179,13 +351,69 @@ class AdminRefactorTest extends TestCase
         $this->assertDatabaseHas('courses', ['id' => $course->id]);
     }
 
-    public function test_admin_can_view_courses_overview(): void
+    public function test_admin_cannot_delete_course_with_soft_deleted_enrollments(): void
+    {
+        $course = Course::create(['title' => 'Course With Soft Deleted Enrollment', 'description' => 'Desc']);
+        $student = User::factory()->student()->create();
+        $enrollment = Enrollment::create([
+            'user_id' => $student->id,
+            'course_id' => $course->id,
+            'status' => 'approved',
+        ]);
+
+        $enrollment->delete();
+        $this->assertTrue($enrollment->fresh()->trashed());
+
+        $response = $this->deleteJson("/api/admin/courses/{$course->id}");
+
+        $response->assertStatus(409)
+            ->assertJson([
+                'message' => 'Cannot delete course because students are enrolled.',
+            ]);
+
+        $this->assertDatabaseHas('courses', ['id' => $course->id]);
+
+        // Verify service layer also rejects deletion
+        $this->expectException(ConflictHttpException::class);
+        app(CourseService::class)->delete($course);
+    }
+
+    public function test_admin_enrollment_status_transition_updates_course_students_count(): void
+    {
+        $course = Course::create([
+            'title' => 'Count Transition Course',
+            'description' => 'Desc',
+            'is_public' => false,
+            'students_count' => 0,
+        ]);
+        $student = User::factory()->student()->create();
+        $enrollment = Enrollment::create([
+            'user_id' => $student->id,
+            'course_id' => $course->id,
+            'status' => 'pending',
+        ]);
+
+        // Pending -> Approved increments students_count
+        $this->patchJson("/api/admin/enrollments/{$enrollment->id}", [
+            'status' => 'approved',
+        ])->assertOk();
+
+        $this->assertSame(1, $course->fresh()->students_count);
+
+        // Approved -> Rejected decrements students_count
+        $this->patchJson("/api/admin/enrollments/{$enrollment->id}", [
+            'status' => 'rejected',
+        ])->assertOk();
+
+        $this->assertSame(0, $course->fresh()->students_count);
+    }
+
+    public function test_courses_overview_route_is_removed(): void
     {
         Course::create(['title' => 'Course 1', 'description' => 'Desc']);
 
         $this->getJson('/api/admin/courses-overview')
-            ->assertOk()
-            ->assertJsonStructure(['data' => [['id', 'title']]]);
+            ->assertNotFound();
     }
 
     public function test_admin_can_store_and_delete_section(): void

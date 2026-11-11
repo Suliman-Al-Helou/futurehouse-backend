@@ -27,7 +27,7 @@ class CourseAdminResource extends JsonResource
             'target_audience' => $this->target_audience ?? [],
             'what_you_learn' => $this->what_you_learn ?? [],
 
-            'students_count' => $this->approved_count ?? 0,
+            'students_count' => $this->approved_count ?? $this->students_count ?? 0,
             'enrollments_count' => $this->enrollments_count ?? 0,
             'rating' => $this->rating,
             'is_popular' => $this->is_popular,
