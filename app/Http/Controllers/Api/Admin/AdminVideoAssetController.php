@@ -93,6 +93,12 @@ class AdminVideoAssetController extends Controller
     /** Receives chunked file uploads and stitches them into a video file */
     public function uploadChunk(Request $request): JsonResponse
     {
+        if (! $this->youtubeService->isConnected()) {
+            return response()->json([
+                'message' => 'قناة YouTube غير مربوطة بعد. يرجى ربط قناة YouTube من تبويب لقاءات Zoom أولاً لتفعيل الرفع.',
+            ], 422);
+        }
+
         $validated = $request->validate([
             'chunk' => ['required', 'file'],
             'chunk_index' => ['required', 'integer', 'min:0'],
@@ -106,6 +112,7 @@ class AdminVideoAssetController extends Controller
             'type' => ['nullable', 'string', 'in:recording,lesson'],
         ]);
 
+     
         $uploadId = preg_replace('/[^a-zA-Z0-9_-]/', '', $validated['upload_id']);
         $chunkIndex = (int) $validated['chunk_index'];
         $totalChunks = (int) $validated['total_chunks'];

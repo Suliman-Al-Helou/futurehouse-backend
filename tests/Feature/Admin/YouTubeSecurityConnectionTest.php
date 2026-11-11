@@ -168,8 +168,9 @@ class YouTubeSecurityConnectionTest extends TestCase
     {
         Queue::fake();
 
-        // Simulate connection
+        // Simulate connection with both token and verified channel
         PlatformSetting::set('youtube_refresh_token', Crypt::encryptString('mock-token'));
+        PlatformSetting::set('youtube_channel_title', 'Test Mock Channel');
 
         $uploadId = 'test_upload_' . uniqid();
         $chunkSize = 256 * 1024; // 256 KB slice (Google compliant)

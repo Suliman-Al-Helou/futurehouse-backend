@@ -247,6 +247,10 @@ class VideoAssetTest extends TestCase
 
     public function test_admin_can_upload_video_chunks_and_assemble_asset(): void
     {
+        \Illuminate\Support\Facades\Queue::fake();
+        \App\Models\PlatformSetting::set('youtube_refresh_token', 'mock_token');
+        \App\Models\PlatformSetting::set('youtube_channel_title', 'Master Dev Channel');
+
         $uploadId = 'test_upload_' . uniqid();
         $chunk1 = \Illuminate\Http\UploadedFile::fake()->createWithContent('chunk_0', 'part1-content-');
         $chunk2 = \Illuminate\Http\UploadedFile::fake()->createWithContent('chunk_1', 'part2-content');

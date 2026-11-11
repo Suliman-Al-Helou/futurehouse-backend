@@ -65,23 +65,32 @@ class YouTubeService
             throw new \RuntimeException('Google OAuth Error: ' . ($token['error_description'] ?? $token['error']));
         }
 
-        if (isset($token['refresh_token'])) {
-            // Encrypt refresh token at rest using authenticated AES-256-GCM
-            PlatformSetting::set('youtube_refresh_token', Crypt::encryptString((string) $token['refresh_token']));
-        }
-
-        // Fetch channel name for display
-        $channelTitle = 'Connected YouTube Channel';
+        // Fetch channel name for display from YouTube
+        $channelTitle = null;
         try {
             $youtube = new YouTube($client);
             $channelsResponse = $youtube->channels->listChannels('snippet', ['mine' => true]);
-            if (! empty($channelsResponse->getItems())) {
-                $channelTitle = $channelsResponse->getItems()[0]->getSnippet()->getTitle();
-                PlatformSetting::set('youtube_channel_title', $channelTitle);
+            $items = $channelsResponse->getItems();
+            if (! empty($items)) {
+                $channelTitle = $items[0]->getSnippet()->getTitle();
             }
         } catch (\Throwable $e) {
             Log::warning('Failed fetching YouTube channel details: ' . $e->getMessage());
         }
+
+        if (blank($channelTitle)) {
+            // Do NOT consider connected if no YouTube channel exists on this Google account
+            PlatformSetting::set('youtube_refresh_token', null);
+            PlatformSetting::set('youtube_channel_title', null);
+
+            throw new \RuntimeException('تم توثيق حساب Google بنجاح، ولكن هذا الحساب لا يمتلك قناة على YouTube. يرجى الدخول إلى YouTube وإنشاء قناة أولاً ثم إعادة المحاولة.');
+        }
+
+        if (isset($token['refresh_token'])) {
+            // Encrypt refresh token at rest using authenticated AES-256-GCM
+            PlatformSetting::set('youtube_refresh_token', Crypt::encryptString((string) $token['refresh_token']));
+        }
+        PlatformSetting::set('youtube_channel_title', $channelTitle);
 
         return [
             'status' => 'connected',
@@ -91,14 +100,22 @@ class YouTubeService
 
     public function isConnected(): bool
     {
-        return ! blank(PlatformSetting::get('youtube_refresh_token'));
+        return ! blank(PlatformSetting::get('youtube_refresh_token'))
+            && ! blank(PlatformSetting::get('youtube_channel_title'));
     }
 
     public function getStatus(): array
     {
+        $channelTitle = PlatformSetting::get('youtube_channel_title');
+        $hasToken = ! blank(PlatformSetting::get('youtube_refresh_token'));
+        $isConnected = $hasToken && ! blank($channelTitle);
+
         return [
-            'connected' => $this->isConnected(),
-            'channel_title' => PlatformSetting::get('youtube_channel_title', 'قناة YouTube'),
+            'connected' => $isConnected,
+            'channel_title' => $channelTitle ?: 'قناة غير مربوطة',
+            'message' => $isConnected
+                ? "قناة YouTube مربوطة: {$channelTitle}"
+                : 'قناة YouTube غير مربوطة. يرجى ربط القناة أولاً لتفعيل الرفع.',
         ];
     }
 
