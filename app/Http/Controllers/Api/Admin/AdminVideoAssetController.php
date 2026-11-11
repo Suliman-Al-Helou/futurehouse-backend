@@ -15,6 +15,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
 
 class AdminVideoAssetController extends Controller
@@ -191,16 +192,34 @@ class AdminVideoAssetController extends Controller
         return response()->json($this->youtubeService->getStatus());
     }
 
-    /** Returns Google OAuth Auth URL */
-    public function youtubeAuthUrl(): JsonResponse
+    /** Returns Google OAuth Auth URL with CSRF state protection */
+    public function youtubeAuthUrl(Request $request): JsonResponse
     {
-        return response()->json(['url' => $this->youtubeService->getAuthUrl()]);
+        $state = 'yt_' . bin2hex(random_bytes(16));
+        $userId = $request->user()?->id ?? 'admin';
+        Cache::put("yt_oauth_state_{$state}", $userId, now()->addMinutes(15));
+
+        return response()->json([
+            'url' => $this->youtubeService->getAuthUrl($state),
+            'state' => $state,
+        ]);
     }
 
-    /** Handles OAuth callback code from Google */
+    /** Handles OAuth callback code from Google with state validation */
     public function youtubeCallback(Request $request): JsonResponse
     {
-        $request->validate(['code' => ['required', 'string']]);
+        $request->validate([
+            'code' => ['required', 'string'],
+            'state' => ['nullable', 'string'],
+        ]);
+
+        $state = $request->input('state');
+        if ($state && $state !== 'youtube_callback' && ! Cache::has("yt_oauth_state_{$state}")) {
+            return response()->json(['message' => 'رمز التحقق (CSRF State) منتهي الصلاحية أو غير صالح.'], 403);
+        }
+        if ($state && Cache::has("yt_oauth_state_{$state}")) {
+            Cache::forget("yt_oauth_state_{$state}");
+        }
 
         try {
             $result = $this->youtubeService->handleCallback($request->input('code'));
@@ -210,11 +229,10 @@ class AdminVideoAssetController extends Controller
         }
     }
 
-    /** Disconnects YouTube channel */
+    /** Disconnects YouTube channel and revokes active token upstream on Google servers */
     public function youtubeDisconnect(): JsonResponse
     {
-        PlatformSetting::set('youtube_refresh_token', null);
-        PlatformSetting::set('youtube_channel_title', null);
+        $this->youtubeService->revokeCurrentToken();
 
         return response()->json(['status' => 'disconnected']);
     }

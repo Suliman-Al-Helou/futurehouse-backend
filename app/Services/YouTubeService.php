@@ -17,6 +17,7 @@ use Google\Service\YouTube\ResourceId;
 use Google\Service\YouTube\Video;
 use Google\Service\YouTube\VideoSnippet;
 use Google\Service\YouTube\VideoStatus;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Log;
 
 class YouTubeService
@@ -26,12 +27,10 @@ class YouTubeService
         $client = new GoogleClient();
         $client->setClientId((string) config('services.google.client_id', env('GOOGLE_CLIENT_ID')));
         $client->setClientSecret((string) config('services.google.client_secret', env('GOOGLE_CLIENT_SECRET')));
-        
-        // Redirect back to admin dashboard (clean URI without query strings for Google Cloud Console compatibility)
+
         $frontendUrl = rtrim((string) env('FRONTEND_URL', 'http://localhost:3000'), '/');
         $redirectUri = (string) env('GOOGLE_REDIRECT_URI', $frontendUrl . '/admin');
         $client->setRedirectUri($redirectUri);
-        $client->setState('youtube_callback');
 
         $client->addScope([
             YouTube::YOUTUBE,
@@ -45,9 +44,16 @@ class YouTubeService
         return $client;
     }
 
-    public function getAuthUrl(): string
+    public function getAuthUrl(?string $state = null): string
     {
-        return $this->getBaseClient()->createAuthUrl();
+        $client = $this->getBaseClient();
+        if ($state) {
+            $client->setState($state);
+        } else {
+            $client->setState('youtube_callback');
+        }
+
+        return $client->createAuthUrl();
     }
 
     public function handleCallback(string $code): array
@@ -60,7 +66,8 @@ class YouTubeService
         }
 
         if (isset($token['refresh_token'])) {
-            PlatformSetting::set('youtube_refresh_token', $token['refresh_token']);
+            // Encrypt refresh token at rest using authenticated AES-256-GCM
+            PlatformSetting::set('youtube_refresh_token', Crypt::encryptString((string) $token['refresh_token']));
         }
 
         // Fetch channel name for display
@@ -97,15 +104,52 @@ class YouTubeService
 
     public function getAuthenticatedClient(): ?GoogleClient
     {
-        $refreshToken = PlatformSetting::get('youtube_refresh_token');
-        if (! $refreshToken) {
+        $stored = PlatformSetting::get('youtube_refresh_token');
+        if (! $stored) {
             return null;
+        }
+
+        try {
+            $refreshToken = Crypt::decryptString($stored);
+        } catch (\Throwable) {
+            $refreshToken = $stored;
+            // Upgrade legacy plaintext token to encrypted storage
+            PlatformSetting::set('youtube_refresh_token', Crypt::encryptString($stored));
         }
 
         $client = $this->getBaseClient();
         $client->refreshToken($refreshToken);
 
         return $client;
+    }
+
+    /**
+     * Revokes the active refresh token on Google servers and clears local credentials.
+     */
+    public function revokeCurrentToken(): bool
+    {
+        $stored = PlatformSetting::get('youtube_refresh_token');
+        if (! $stored) {
+            return true;
+        }
+
+        try {
+            $refreshToken = Crypt::decryptString($stored);
+        } catch (\Throwable) {
+            $refreshToken = $stored;
+        }
+
+        try {
+            $client = $this->getBaseClient();
+            $client->revokeToken($refreshToken);
+        } catch (\Throwable $e) {
+            Log::warning('Failed revoking YouTube token on Google servers: ' . $e->getMessage());
+        }
+
+        PlatformSetting::set('youtube_refresh_token', null);
+        PlatformSetting::set('youtube_channel_title', null);
+
+        return true;
     }
 
     /** Creates an unlisted playlist for a course on YouTube */

@@ -23,3 +23,13 @@ Enables administrators to attach external video replays (YouTube, Bunny, Cloudfl
 - `GET /api/admin/video-assets/{id}` — Shows detailed record with relations.
 - `PUT /api/admin/video-assets/{id}` — Updates asset metadata.
 - `DELETE /api/admin/video-assets/{id}` — Removes asset record.
+
+## 4. YouTube OAuth 2.0 & Ingestion Pipeline
+- **Security & Token Encryption:**
+  - Refresh tokens stored in `platform_settings` are encrypted at rest with AES-256-GCM (`Crypt::encryptString`).
+  - Google OAuth `state` parameter generated with 32-character random hex per session (`Cache::put("yt_oauth_state_{state}", $adminId, 15min)`) to protect against CSRF attacks. Single-use consumption on callback.
+  - Upstream token revocation on Google servers (`$client->revokeToken($refreshToken)`) upon disconnect.
+- **Automated Course Playlists:**
+  - Each course possesses an optional `youtube_playlist_id`. Newly uploaded videos are automatically appended to this unlisted playlist.
+- **Chunked Resumable Ingestion:**
+  - `POST /api/admin/video-assets/upload-chunk` receives 256 KB multiple binary chunks, reassembles files without path traversal, and dispatches `UploadVideoToYouTubeJob`.
