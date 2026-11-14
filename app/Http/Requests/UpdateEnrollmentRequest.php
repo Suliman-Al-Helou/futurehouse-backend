@@ -15,6 +15,7 @@ class UpdateEnrollmentRequest extends FormRequest
     {
         return [
             'status' => ['required', 'in:approved,rejected'],
+            'payment_confirmed' => ['nullable', 'boolean'],
         ];
     }
 

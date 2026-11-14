@@ -6,10 +6,11 @@ use App\Models\Concerns\ClearsCacheOnChange;
 use App\Support\ContentCache;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Enrollment extends Model
 {
-    use ClearsCacheOnChange , HasFactory;
+    use ClearsCacheOnChange, HasFactory, SoftDeletes;
 
     public static function flushCache(): void
     {

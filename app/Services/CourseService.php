@@ -7,14 +7,30 @@ namespace App\Services;
 use App\Models\Course;
 use App\Models\Section;
 use App\Support\ContentCache;
+use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 
 final class CourseService
 {
+    public function __construct(
+        private readonly ?YouTubeService $youtubeService = null
+    ) {}
+
     /** Creates a course and invalidates the public course cache. */
     public function create(array $data): Course
     {
         $course = Course::create($data);
         ContentCache::forgetCourses();
+
+        try {
+            if ($this->youtubeService && $this->youtubeService->isConnected()) {
+                $playlistId = $this->youtubeService->createCoursePlaylist($course->title, $course->description ?? '');
+                if ($playlistId) {
+                    $course->update(['youtube_playlist_id' => $playlistId]);
+                }
+            }
+        } catch (\Throwable $e) {
+            // Log but don't fail course creation
+        }
 
         return $course;
     }
@@ -31,6 +47,10 @@ final class CourseService
     /** Deletes a course (sections/lessons cascade at DB level) and invalidates cache. */
     public function delete(Course $course): void
     {
+        if ($course->enrollments()->withTrashed()->exists()) {
+            throw new ConflictHttpException('Cannot delete course because students are enrolled.');
+        }
+
         $course->delete();
         ContentCache::forgetCourses();
     }

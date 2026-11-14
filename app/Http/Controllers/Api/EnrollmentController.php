@@ -13,7 +13,6 @@ use Illuminate\Support\Facades\Gate;
 
 class EnrollmentController extends Controller
 {
-
     // تسجيل في كورس
     public function enroll(Request $request, Course $course): JsonResponse
     {
@@ -22,10 +21,19 @@ class EnrollmentController extends Controller
         $isFree = $course->isFree();
         $status = $isFree ? 'approved' : 'pending';
 
-        Enrollment::updateOrCreate(
-            ['user_id' => $request->user()->id, 'course_id' => $course->id],
-            ['status' => $status, 'enrolled_at' => now()]
-        );
+        $enrollment = Enrollment::withTrashed()->firstOrNew([
+            'user_id' => $request->user()->id,
+            'course_id' => $course->id,
+        ]);
+
+        $enrollment->status = $status;
+        $enrollment->enrolled_at = now();
+
+        if ($enrollment->trashed()) {
+            $enrollment->restore();
+        } else {
+            $enrollment->save();
+        }
 
         return response()->json([
             'message' => $isFree
@@ -85,11 +93,20 @@ class EnrollmentController extends Controller
 
     public function unenroll(Request $request, Course $course): JsonResponse
     {
-        Enrollment::where('user_id', $request->user()->id)
+        $enrollment = Enrollment::where('user_id', $request->user()->id)
             ->where('course_id', $course->id)
-            ->delete();
+            ->first();
 
-        $course->decrement('students_count');
+        if ($enrollment) {
+            $wasApproved = $enrollment->status === 'approved';
+            $enrollment->delete();
+
+            if ($wasApproved) {
+                Course::where('id', $course->id)
+                    ->where('students_count', '>', 0)
+                    ->decrement('students_count');
+            }
+        }
 
         return response()->json([
             'message' => 'تم سحب التسجيل بنجاح',

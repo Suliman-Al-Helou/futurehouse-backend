@@ -82,6 +82,36 @@ class ZoomMeetingTest extends TestCase
         $this->postJson("/api/zoom-meetings/{$this->meeting->id}/attend")->assertStatus(403);
     }
 
+    public function test_unenrolled_student_can_attend_free_course_zoom_meeting(): void
+    {
+        $freeCourse = Course::create([
+            'title' => 'Free Live Course',
+            'description' => 'Free live course with zoom sessions',
+            'status' => 'published',
+            'is_public' => true,
+        ]);
+
+        $freeMeeting = ZoomMeeting::create([
+            'course_id' => $freeCourse->id,
+            'title' => 'Free Live Session',
+            'zoom_link' => 'https://zoom.us/j/5555555555',
+            'starts_at' => now()->subMinutes(5),
+            'duration_minutes' => 60,
+        ]);
+
+        Sanctum::actingAs($this->student);
+
+        $response = $this->postJson("/api/zoom-meetings/{$freeMeeting->id}/attend");
+
+        $response->assertOk()
+            ->assertJsonPath('zoom_link', 'https://zoom.us/j/5555555555');
+
+        $this->assertDatabaseHas('zoom_attendances', [
+            'zoom_meeting_id' => $freeMeeting->id,
+            'user_id' => $this->student->id,
+        ]);
+    }
+
     public function test_enrolled_student_clicking_join_records_attendance(): void
     {
         Enrollment::create([
@@ -228,5 +258,99 @@ class ZoomMeetingTest extends TestCase
         $rosterRes2 = $this->getJson("/api/admin/zoom-meetings/{$this->meeting->id}/roster");
         $rosterRes2->assertOk();
         $this->assertTrue($rosterRes2->json('0.attended'));
+    }
+
+    public function test_unenrolled_student_sees_free_course_zoom_meetings_in_calendar(): void
+    {
+        $freeCourse = Course::create([
+            'title' => 'Free Calendar Course',
+            'description' => 'Free course',
+            'status' => 'published',
+            'is_public' => true,
+        ]);
+
+        $freeMeeting = ZoomMeeting::create([
+            'course_id' => $freeCourse->id,
+            'title' => 'Free Calendar Session',
+            'zoom_link' => 'https://zoom.us/j/1112223333',
+            'starts_at' => now()->startOfMonth()->addDays(5)->setHour(14),
+            'duration_minutes' => 60,
+        ]);
+
+        Sanctum::actingAs($this->student);
+
+        $month = now()->format('Y-m');
+        $response = $this->getJson("/api/zoom-meetings?month={$month}");
+
+        $response->assertOk()
+            ->assertJsonCount(1)
+            ->assertJsonPath('0.id', $freeMeeting->id)
+            ->assertJsonPath('0.course_name', 'Free Calendar Course');
+    }
+
+    public function test_unenrolled_student_can_view_free_course_attendance_record(): void
+    {
+        $freeCourse = Course::create([
+            'title' => 'Free Record Course',
+            'description' => 'Free course',
+            'status' => 'published',
+            'is_public' => true,
+        ]);
+
+        $pastFreeMeeting = ZoomMeeting::create([
+            'course_id' => $freeCourse->id,
+            'title' => 'Free Ended Session',
+            'zoom_link' => 'https://zoom.us/j/4445556666',
+            'starts_at' => now()->subHours(2),
+            'duration_minutes' => 60,
+        ]);
+
+        ZoomAttendance::create([
+            'zoom_meeting_id' => $pastFreeMeeting->id,
+            'user_id' => $this->student->id,
+            'attended_at' => now()->subHours(2),
+        ]);
+
+        Sanctum::actingAs($this->student);
+
+        $response = $this->getJson("/api/zoom-meetings/attendance?course_id={$freeCourse->id}");
+
+        $response->assertOk()
+            ->assertJsonCount(1)
+            ->assertJsonPath('0.id', $pastFreeMeeting->id)
+            ->assertJsonPath('0.attended', true);
+    }
+
+    public function test_admin_can_set_attendance_for_student_on_free_course(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $freeCourse = Course::create([
+            'title' => 'Admin Free Course',
+            'description' => 'Free course',
+            'status' => 'published',
+            'is_public' => true,
+        ]);
+
+        $freeMeeting = ZoomMeeting::create([
+            'course_id' => $freeCourse->id,
+            'title' => 'Admin Free Session',
+            'zoom_link' => 'https://zoom.us/j/7778889999',
+            'starts_at' => now()->subMinutes(10),
+            'duration_minutes' => 60,
+        ]);
+
+        Sanctum::actingAs($admin);
+
+        $response = $this->putJson("/api/admin/zoom-meetings/{$freeMeeting->id}/attendances/{$this->student->id}", [
+            'attended' => true,
+        ]);
+
+        $response->assertOk()->assertJson(['attended' => true]);
+
+        $this->assertDatabaseHas('zoom_attendances', [
+            'zoom_meeting_id' => $freeMeeting->id,
+            'user_id' => $this->student->id,
+        ]);
     }
 }

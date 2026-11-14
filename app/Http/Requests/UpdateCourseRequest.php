@@ -27,6 +27,9 @@ class UpdateCourseRequest extends StoreCourseRequest
                 $rule = "sometimes|$rule";
             }
         }
+        unset($rule);
+
+        $rules['instructor_id'] = ['sometimes', 'nullable', 'integer', 'exists:instructors,id'];
 
         return $rules;
     }

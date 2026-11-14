@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Course;
 use App\Models\Enrollment;
 use App\Models\ZoomAttendance;
 use App\Models\ZoomMeeting;
@@ -29,6 +30,12 @@ class ZoomMeetingController extends Controller
      */
     private function denyIfNotEnrolled(ZoomMeeting $zoomMeeting)
     {
+        $zoomMeeting->loadMissing('course');
+
+        if ($zoomMeeting->course?->isFree()) {
+            return null;
+        }
+
         if (! in_array($zoomMeeting->course_id, $this->approvedCourseIds(Auth::id()), true)) {
             return response()->json(['message' => 'هذا اللقاء غير متاح لك أو لم يتم قبولك بالكورس'], 403);
         }
@@ -60,11 +67,17 @@ class ZoomMeetingController extends Controller
 
         $userId = Auth::id();
         $approvedIds = $this->approvedCourseIds($userId);
-        if (empty($approvedIds)) {
+        $freeCourseIds = Course::where('status', 'published')
+            ->where('is_public', true)
+            ->pluck('id')
+            ->all();
+
+        $allowedCourseIds = array_values(array_unique(array_merge($approvedIds, $freeCourseIds)));
+        if (empty($allowedCourseIds)) {
             return response()->json([]);
         }
         $meetings = ZoomMeeting::with('course:id,title')
-            ->whereIn('course_id', $approvedIds)
+            ->whereIn('course_id', $allowedCourseIds)
             ->whereBetween('starts_at', [$start, $end])
             ->orderBy('starts_at')
             ->get();
@@ -169,16 +182,36 @@ class ZoomMeetingController extends Controller
         $data = $request->validate(['course_id' => ['required', 'integer']]);
         $userId = Auth::id();
 
-        $enrollment = Enrollment::where('user_id', $userId)
-            ->where('course_id', $data['course_id'])
-            ->where('status', 'approved')
-            ->first();
-
-        if (! $enrollment) {
+        $course = Course::find($data['course_id']);
+        if (! $course) {
             return response()->json(['message' => 'غير مسجل أو غير مقبول في هذا الكورس'], 403);
         }
 
-        $ended = $this->endedMeetings($enrollment)->sortByDesc('starts_at')->values();
+        if (! $course->isFree()) {
+            $enrollment = Enrollment::where('user_id', $userId)
+                ->where('course_id', $course->id)
+                ->where('status', 'approved')
+                ->first();
+
+            if (! $enrollment) {
+                return response()->json(['message' => 'غير مسجل أو غير مقبول في هذا الكورس'], 403);
+            }
+
+            $ended = $this->endedMeetings($enrollment)->sortByDesc('starts_at')->values();
+        } else {
+            $user = Auth::user();
+            $attendedMeetingIds = ZoomAttendance::where('user_id', $user->id)->pluck('zoom_meeting_id');
+
+            $ended = ZoomMeeting::where('course_id', $course->id)
+                ->where(function ($q) use ($user, $attendedMeetingIds) {
+                    $q->where('starts_at', '>=', $user->created_at)
+                        ->orWhereIn('id', $attendedMeetingIds);
+                })
+                ->get()
+                ->filter(fn (ZoomMeeting $m) => $m->hasEnded())
+                ->sortByDesc('starts_at')
+                ->values();
+        }
 
         $attendances = ZoomAttendance::where('user_id', $userId)
             ->whereIn('zoom_meeting_id', $ended->pluck('id'))
