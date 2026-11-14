@@ -10,7 +10,6 @@ use App\Models\PlatformSetting;
 use App\Models\User;
 use App\Models\VideoAsset;
 use App\Services\YouTubeService;
-use Google\Client as GoogleClient;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
@@ -25,6 +24,7 @@ class YouTubeSecurityConnectionTest extends TestCase
     use RefreshDatabase;
 
     private User $admin;
+
     private Course $course;
 
     protected function setUp(): void
@@ -68,9 +68,9 @@ class YouTubeSecurityConnectionTest extends TestCase
         // Assert scope includes upload capability
         $this->assertStringContainsString('youtube.upload', $url);
         // Assert clean redirect URI
-        $this->assertStringContainsString('redirect_uri=' . urlencode('http://localhost:3000/admin'), $url);
+        $this->assertStringContainsString('redirect_uri='.urlencode('http://localhost:3000/admin'), $url);
         // Assert dynamic state parameter in URL
-        $this->assertStringContainsString('state=' . urlencode($state), $url);
+        $this->assertStringContainsString('state='.urlencode($state), $url);
     }
 
     /**
@@ -102,9 +102,9 @@ class YouTubeSecurityConnectionTest extends TestCase
         });
 
         $response = $this->postJson('/api/admin/youtube/callback', [
-                'code' => 'valid-google-auth-code',
-                'state' => $validState,
-            ]);
+            'code' => 'valid-google-auth-code',
+            'state' => $validState,
+        ]);
 
         $response->assertOk()
             ->assertJsonPath('status', 'connected')
@@ -172,7 +172,7 @@ class YouTubeSecurityConnectionTest extends TestCase
         PlatformSetting::set('youtube_refresh_token', Crypt::encryptString('mock-token'));
         PlatformSetting::set('youtube_channel_title', 'Test Mock Channel');
 
-        $uploadId = 'test_upload_' . uniqid();
+        $uploadId = 'test_upload_'.uniqid();
         $chunkSize = 256 * 1024; // 256 KB slice (Google compliant)
         $totalChunks = 2;
 

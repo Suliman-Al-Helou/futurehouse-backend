@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace Tests\Feature\Admin;
 
 use App\Models\Course;
+use App\Models\PlatformSetting;
 use App\Models\User;
 use App\Models\VideoAsset;
 use App\Models\ZoomMeeting;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Queue;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -17,6 +20,7 @@ class VideoAssetTest extends TestCase
     use RefreshDatabase;
 
     private User $admin;
+
     private Course $course;
 
     protected function setUp(): void
@@ -247,13 +251,13 @@ class VideoAssetTest extends TestCase
 
     public function test_admin_can_upload_video_chunks_and_assemble_asset(): void
     {
-        \Illuminate\Support\Facades\Queue::fake();
-        \App\Models\PlatformSetting::set('youtube_refresh_token', 'mock_token');
-        \App\Models\PlatformSetting::set('youtube_channel_title', 'Master Dev Channel');
+        Queue::fake();
+        PlatformSetting::set('youtube_refresh_token', 'mock_token');
+        PlatformSetting::set('youtube_channel_title', 'Master Dev Channel');
 
-        $uploadId = 'test_upload_' . uniqid();
-        $chunk1 = \Illuminate\Http\UploadedFile::fake()->createWithContent('chunk_0', 'part1-content-');
-        $chunk2 = \Illuminate\Http\UploadedFile::fake()->createWithContent('chunk_1', 'part2-content');
+        $uploadId = 'test_upload_'.uniqid();
+        $chunk1 = UploadedFile::fake()->createWithContent('chunk_0', 'part1-content-');
+        $chunk2 = UploadedFile::fake()->createWithContent('chunk_1', 'part2-content');
 
         // Chunk 1 of 2
         $res1 = $this->postJson('/api/admin/video-assets/upload-chunk', [

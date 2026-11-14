@@ -18,6 +18,7 @@ class UploadVideoToYouTubeJob implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public int $timeout = 3600; // 1 hour for large video uploads
+
     public int $tries = 2;
 
     public function __construct(
@@ -61,7 +62,7 @@ class UploadVideoToYouTubeJob implements ShouldQueue
                 @unlink($this->filePath);
             }
         } catch (\Throwable $e) {
-            Log::error("Failed uploading video asset {$this->videoAsset->id} to YouTube: " . $e->getMessage());
+            Log::error("Failed uploading video asset {$this->videoAsset->id} to YouTube: ".$e->getMessage());
             $this->videoAsset->update(['status' => 'failed']);
             throw $e;
         }

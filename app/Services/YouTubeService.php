@@ -24,12 +24,12 @@ class YouTubeService
 {
     private function getBaseClient(): GoogleClient
     {
-        $client = new GoogleClient();
+        $client = new GoogleClient;
         $client->setClientId((string) config('services.google.client_id', env('GOOGLE_CLIENT_ID')));
         $client->setClientSecret((string) config('services.google.client_secret', env('GOOGLE_CLIENT_SECRET')));
 
         $frontendUrl = rtrim((string) env('FRONTEND_URL', 'http://localhost:3000'), '/');
-        $redirectUri = (string) env('GOOGLE_REDIRECT_URI', $frontendUrl . '/admin');
+        $redirectUri = (string) env('GOOGLE_REDIRECT_URI', $frontendUrl.'/admin');
         $client->setRedirectUri($redirectUri);
 
         $client->addScope([
@@ -62,7 +62,7 @@ class YouTubeService
         $token = $client->fetchAccessTokenWithAuthCode($code);
 
         if (isset($token['error'])) {
-            throw new \RuntimeException('Google OAuth Error: ' . ($token['error_description'] ?? $token['error']));
+            throw new \RuntimeException('Google OAuth Error: '.($token['error_description'] ?? $token['error']));
         }
 
         // Fetch channel name for display from YouTube
@@ -77,7 +77,7 @@ class YouTubeService
             }
         } catch (\Throwable $e) {
             $fetchError = $e->getMessage();
-            Log::warning('Failed fetching YouTube channel details: ' . $fetchError);
+            Log::warning('Failed fetching YouTube channel details: '.$fetchError);
         }
 
         if (blank($channelTitle)) {
@@ -166,7 +166,7 @@ class YouTubeService
             $client = $this->getBaseClient();
             $client->revokeToken($refreshToken);
         } catch (\Throwable $e) {
-            Log::warning('Failed revoking YouTube token on Google servers: ' . $e->getMessage());
+            Log::warning('Failed revoking YouTube token on Google servers: '.$e->getMessage());
         }
 
         PlatformSetting::set('youtube_refresh_token', null);
@@ -186,14 +186,14 @@ class YouTubeService
 
             $youtube = new YouTube($client);
 
-            $playlistSnippet = new PlaylistSnippet();
+            $playlistSnippet = new PlaylistSnippet;
             $playlistSnippet->setTitle($title);
             $playlistSnippet->setDescription($description);
 
-            $playlistStatus = new PlaylistStatus();
+            $playlistStatus = new PlaylistStatus;
             $playlistStatus->setPrivacyStatus('unlisted');
 
-            $playlist = new Playlist();
+            $playlist = new Playlist;
             $playlist->setSnippet($playlistSnippet);
             $playlist->setStatus($playlistStatus);
 
@@ -201,7 +201,8 @@ class YouTubeService
 
             return $response->getId();
         } catch (\Throwable $e) {
-            Log::error('YouTube createCoursePlaylist failed: ' . $e->getMessage());
+            Log::error('YouTube createCoursePlaylist failed: '.$e->getMessage());
+
             return null;
         }
     }
@@ -220,14 +221,14 @@ class YouTubeService
 
         $youtube = new YouTube($client);
 
-        $videoSnippet = new VideoSnippet();
+        $videoSnippet = new VideoSnippet;
         $videoSnippet->setTitle($title);
         $videoSnippet->setDescription($description);
 
-        $videoStatus = new VideoStatus();
+        $videoStatus = new VideoStatus;
         $videoStatus->setPrivacyStatus('unlisted');
 
-        $video = new Video();
+        $video = new Video;
         $video->setSnippet($videoSnippet);
         $video->setStatus($videoStatus);
 
@@ -273,24 +274,26 @@ class YouTubeService
     {
         try {
             $client = $this->getAuthenticatedClient();
-            if (! $client) return;
+            if (! $client) {
+                return;
+            }
 
             $youtube = new YouTube($client);
 
-            $resourceId = new ResourceId();
+            $resourceId = new ResourceId;
             $resourceId->setKind('youtube#video');
             $resourceId->setVideoId($videoId);
 
-            $playlistItemSnippet = new PlaylistItemSnippet();
+            $playlistItemSnippet = new PlaylistItemSnippet;
             $playlistItemSnippet->setPlaylistId($playlistId);
             $playlistItemSnippet->setResourceId($resourceId);
 
-            $playlistItem = new PlaylistItem();
+            $playlistItem = new PlaylistItem;
             $playlistItem->setSnippet($playlistItemSnippet);
 
             $youtube->playlistItems->insert('snippet', $playlistItem);
         } catch (\Throwable $e) {
-            Log::warning("Failed adding video {$videoId} to playlist {$playlistId}: " . $e->getMessage());
+            Log::warning("Failed adding video {$videoId} to playlist {$playlistId}: ".$e->getMessage());
         }
     }
 }

@@ -8,7 +8,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\VideoAssetRequest;
 use App\Http\Resources\VideoAssetResource;
 use App\Jobs\UploadVideoToYouTubeJob;
-use App\Models\PlatformSetting;
 use App\Models\VideoAsset;
 use App\Services\YouTubeService;
 use Illuminate\Http\JsonResponse;
@@ -112,13 +111,12 @@ class AdminVideoAssetController extends Controller
             'type' => ['nullable', 'string', 'in:recording,lesson'],
         ]);
 
-     
         $uploadId = preg_replace('/[^a-zA-Z0-9_-]/', '', $validated['upload_id']);
         $chunkIndex = (int) $validated['chunk_index'];
         $totalChunks = (int) $validated['total_chunks'];
 
         $tempBaseDir = storage_path('app/temp-videos');
-        $sessionDir = $tempBaseDir . '/' . $uploadId;
+        $sessionDir = $tempBaseDir.'/'.$uploadId;
 
         if (! File::isDirectory($sessionDir)) {
             File::makeDirectory($sessionDir, 0755, true);
@@ -139,6 +137,7 @@ class AdminVideoAssetController extends Controller
 
         if (! $allPresent) {
             $progress = (int) round((($chunkIndex + 1) / $totalChunks) * 100);
+
             return response()->json([
                 'completed' => false,
                 'chunk_index' => $chunkIndex,
@@ -148,7 +147,7 @@ class AdminVideoAssetController extends Controller
 
         // All chunks arrived: stitch into a single file
         $extension = pathinfo($validated['file_name'], PATHINFO_EXTENSION) ?: 'mp4';
-        $finalFilename = "video_{$uploadId}." . $extension;
+        $finalFilename = "video_{$uploadId}.".$extension;
         $finalPath = "{$tempBaseDir}/{$finalFilename}";
 
         $outHandle = fopen($finalPath, 'wb');
@@ -169,7 +168,7 @@ class AdminVideoAssetController extends Controller
             'title' => $validated['title'],
             'description' => $validated['description'] ?? null,
             'provider' => 'youtube',
-            'provider_video_id' => 'processing_' . substr($uploadId, 0, 8),
+            'provider_video_id' => 'processing_'.substr($uploadId, 0, 8),
             'status' => 'processing',
             'temp_file_path' => $finalPath,
             'type' => $validated['type'] ?? 'recording',
@@ -202,7 +201,7 @@ class AdminVideoAssetController extends Controller
     /** Returns Google OAuth Auth URL with CSRF state protection */
     public function youtubeAuthUrl(Request $request): JsonResponse
     {
-        $state = 'yt_' . bin2hex(random_bytes(16));
+        $state = 'yt_'.bin2hex(random_bytes(16));
         $userId = $request->user()?->id ?? 'admin';
         Cache::put("yt_oauth_state_{$state}", $userId, now()->addMinutes(15));
 
@@ -229,6 +228,7 @@ class AdminVideoAssetController extends Controller
             if ($state && Cache::has("yt_oauth_state_{$state}")) {
                 Cache::forget("yt_oauth_state_{$state}");
             }
+
             return response()->json($result);
         } catch (\Throwable $e) {
             return response()->json(['message' => $e->getMessage()], 422);

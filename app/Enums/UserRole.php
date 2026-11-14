@@ -25,4 +25,3 @@ enum UserRole: string
         return $this === self::STUDENT;
     }
 }
-

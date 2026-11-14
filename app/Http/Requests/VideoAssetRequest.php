@@ -77,4 +77,3 @@ class VideoAssetRequest extends FormRequest
         ];
     }
 }
-

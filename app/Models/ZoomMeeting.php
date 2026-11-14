@@ -5,6 +5,7 @@ namespace App\Models;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ZoomMeeting extends Model
 {
@@ -32,7 +33,7 @@ class ZoomMeeting extends Model
         return $this->hasMany(ZoomAttendance::class);
     }
 
-    public function videoAssets(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function videoAssets(): HasMany
     {
         return $this->hasMany(VideoAsset::class);
     }

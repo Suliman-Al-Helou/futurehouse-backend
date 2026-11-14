@@ -22,7 +22,7 @@ use App\Http\Controllers\Api\ZoomMeetingController;
 use Illuminate\Support\Facades\Route;
 
 // ─── Health ──────────────────────────────────────────────
-Route::get('/health', fn() => response()->json(['status' => 'ok']));
+Route::get('/health', fn () => response()->json(['status' => 'ok']));
 
 // ─── Auth (Public) ────────────────────────────────────────
 Route::prefix('auth')->group(function () {
