@@ -12,8 +12,8 @@ use App\Http\Resources\InstructorResource;
 use App\Models\Instructor;
 use App\Services\InstructorService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Cache;
 
 class InstructorController extends Controller
 {
@@ -21,10 +21,14 @@ class InstructorController extends Controller
         private readonly InstructorService $instructorService,
     ) {}
 
-    /** Lists instructors with course counts. */
-    public function index(): AnonymousResourceCollection
+    /** Lists instructors with course counts, cached for 24 hours. */
+    public function index(): JsonResponse
     {
-        return InstructorResource::collection(Instructor::withCount('courses')->get());
+        $instructors = Cache::remember('instructors:all', 86400, function () {
+            return InstructorResource::collection(Instructor::withCount('courses')->get())->resolve();
+        });
+
+        return response()->json(['data' => $instructors]);
     }
 
     /** Instructor profile with course summaries. */

@@ -50,7 +50,7 @@ class EnrollmentTest extends TestCase
         ]);
     }
 
-    public function test_student_cannot_enroll_in_free_course(): void
+    public function test_student_enrolling_in_free_course_is_immediately_approved(): void
     {
         $student = User::factory()->student()->create();
         Sanctum::actingAs($student);
@@ -64,7 +64,14 @@ class EnrollmentTest extends TestCase
         ]);
 
         $this->postJson("/api/courses/{$course->id}/enroll")
-            ->assertForbidden();
+            ->assertCreated()
+            ->assertJsonPath('status', 'approved');
+
+        $this->assertDatabaseHas('enrollments', [
+            'user_id' => $student->id,
+            'course_id' => $course->id,
+            'status' => 'approved',
+        ]);
     }
 
     public function test_student_can_unenroll_which_soft_deletes_pending_enrollment(): void

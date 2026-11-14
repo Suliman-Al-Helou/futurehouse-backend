@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UpdateLessonProgressRequest;
 use App\Models\Course;
+use App\Models\Enrollment;
 use App\Models\Lesson;
 use App\Models\UserLessonProgress;
 use Illuminate\Http\JsonResponse;
@@ -41,6 +42,14 @@ class ProgressController extends Controller
                 'completed' => $best >= 80,
             ]
         );
+
+        $course = $lesson->getCourse();
+        if ($course && $course->isFree()) {
+            Enrollment::firstOrCreate(
+                ['user_id' => $user->id, 'course_id' => $course->id],
+                ['status' => 'approved', 'enrolled_at' => now()]
+            );
+        }
 
         return response()->json([
             'watched_percent' => $progress->watched_percent,
@@ -122,8 +131,18 @@ class ProgressController extends Controller
         $courseId = $course->id;
         $user = Auth::user();
 
-        if (! $course->isFree() && ! $user->enrollments()->where('course_id', $courseId)->exists()) {
-            return response()->json(['message' => 'غير مشترك'], 403);
+        $enrolled = $user->enrollments()->where('course_id', $courseId)->exists();
+        if (! $enrolled) {
+            if ($course->isFree()) {
+                Enrollment::create([
+                    'user_id' => $user->id,
+                    'course_id' => $courseId,
+                    'status' => 'approved',
+                    'enrolled_at' => now(),
+                ]);
+            } else {
+                return response()->json(['message' => 'غير مشترك'], 403);
+            }
         }
 
         // جلب كل دروس الكورس

@@ -22,7 +22,7 @@ use App\Http\Controllers\Api\ZoomMeetingController;
 use Illuminate\Support\Facades\Route;
 
 // ─── Health ──────────────────────────────────────────────
-Route::get('/health', fn () => response()->json(['status' => 'ok']));
+Route::get('/health', fn() => response()->json(['status' => 'ok']));
 
 // ─── Auth (Public) ────────────────────────────────────────
 Route::prefix('auth')->group(function () {
@@ -34,6 +34,7 @@ Route::prefix('auth')->group(function () {
 Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:register');
     Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
+    Route::post('/google', [AuthController::class, 'googleLogin'])->middleware('throttle:login');
 });
 // ─── Courses (Public) ─────────────────────────────────────
 Route::middleware('throttle:courses-public')->group(function () {

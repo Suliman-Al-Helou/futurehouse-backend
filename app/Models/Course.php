@@ -85,7 +85,7 @@ class Course extends Model
         return $this->load([
             'instructor',
             'sections.lessons' => fn ($query) => $query
-                ->select('id', 'section_id', 'title', 'duration', 'order', 'is_preview')
+                ->select('id', 'section_id', 'title', 'description', 'duration', 'order', 'is_preview', 'video_id')
                 ->orderBy('order'),
         ])->loadCount(['enrollments as approved_count' => fn ($q) => $q->where('status', 'approved')]);
     }
@@ -96,7 +96,7 @@ class Course extends Model
         return $query->with([
             'instructor',
             'sections.lessons' => fn ($query) => $query
-                ->select('id', 'section_id', 'title', 'duration', 'order', 'is_preview')
+                ->select('id', 'section_id', 'title', 'description', 'duration', 'order', 'is_preview', 'video_id')
                 ->orderBy('order'),
         ])->withCount(['enrollments as approved_count' => fn ($q) => $q->where('status', 'approved')]);
     }

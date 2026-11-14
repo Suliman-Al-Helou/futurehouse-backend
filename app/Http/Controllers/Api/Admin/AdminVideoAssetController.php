@@ -100,7 +100,7 @@ class AdminVideoAssetController extends Controller
         }
 
         $validated = $request->validate([
-            'chunk' => ['required', 'file'],
+            'chunk' => ['required', 'file', 'max:51200'],
             'chunk_index' => ['required', 'integer', 'min:0'],
             'total_chunks' => ['required', 'integer', 'min:1'],
             'upload_id' => ['required', 'string', 'max:128'],

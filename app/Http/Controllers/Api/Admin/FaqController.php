@@ -11,15 +11,19 @@ use App\Http\Resources\FaqResource;
 use App\Models\Faq;
 use App\Support\ContentCache;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Cache;
 
 class FaqController extends Controller
 {
-    /** Ordered FAQ list. */
-    public function index(): AnonymousResourceCollection
+    /** Ordered FAQ list with long-term caching (24 hours). */
+    public function index(): JsonResponse
     {
-        return FaqResource::collection(Faq::ordered()->get());
+        $faqs = Cache::remember('faqs:all', 86400, function () {
+            return FaqResource::collection(Faq::ordered()->get())->resolve();
+        });
+
+        return response()->json(['data' => $faqs]);
     }
 
     /** Creates a FAQ. */
