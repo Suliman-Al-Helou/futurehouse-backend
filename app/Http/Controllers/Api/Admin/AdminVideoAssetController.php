@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ChunkUploadRequest;
 use App\Http\Requests\VideoAssetRequest;
 use App\Http\Resources\VideoAssetResource;
 use App\Jobs\UploadVideoToYouTubeJob;
@@ -90,7 +91,7 @@ class AdminVideoAssetController extends Controller
     }
 
     /** Receives chunked file uploads and stitches them into a video file */
-    public function uploadChunk(Request $request): JsonResponse
+    public function uploadChunk(ChunkUploadRequest $request): JsonResponse
     {
         if (! $this->youtubeService->isConnected()) {
             return response()->json([
@@ -98,18 +99,7 @@ class AdminVideoAssetController extends Controller
             ], 422);
         }
 
-        $validated = $request->validate([
-            'chunk' => ['required', 'file', 'max:51200'],
-            'chunk_index' => ['required', 'integer', 'min:0'],
-            'total_chunks' => ['required', 'integer', 'min:1'],
-            'upload_id' => ['required', 'string', 'max:128'],
-            'file_name' => ['required', 'string', 'max:255'],
-            'course_id' => ['required', 'integer', 'exists:courses,id'],
-            'zoom_meeting_id' => ['nullable', 'integer', 'exists:zoom_meetings,id'],
-            'title' => ['required', 'string', 'max:255'],
-            'description' => ['nullable', 'string', 'max:2000'],
-            'type' => ['nullable', 'string', 'in:recording,lesson'],
-        ]);
+        $validated = $request->validated();
 
         $uploadId = preg_replace('/[^a-zA-Z0-9_-]/', '', $validated['upload_id']);
         $chunkIndex = (int) $validated['chunk_index'];
@@ -146,7 +136,9 @@ class AdminVideoAssetController extends Controller
         }
 
         // All chunks arrived: stitch into a single file
-        $extension = pathinfo($validated['file_name'], PATHINFO_EXTENSION) ?: 'mp4';
+        $rawExt = strtolower((string) pathinfo($validated['file_name'], PATHINFO_EXTENSION));
+        $allowedExtensions = ['mp4', 'mov', 'avi', 'mkv', 'webm'];
+        $extension = in_array($rawExt, $allowedExtensions, true) ? $rawExt : 'mp4';
         $finalFilename = "video_{$uploadId}.".$extension;
         $finalPath = "{$tempBaseDir}/{$finalFilename}";
 

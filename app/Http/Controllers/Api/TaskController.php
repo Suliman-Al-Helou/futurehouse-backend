@@ -130,11 +130,13 @@ class TaskController extends Controller
         $maxAttempts = $task->max_attempts ?? 3;
 
         return DB::transaction(function () use ($task, $user, $request, $maxAttempts) {
-            // تحقق من عدد المحاولات مع قفل لمنع التزامن
-            $attemptsUsed = TaskAttempt::where('user_id', $user->id)
+            // تحقق من عدد المحاولات مع قفل لمنع التزامن (متوافق مع PostgreSQL و MySQL)
+            $attempts = TaskAttempt::where('user_id', $user->id)
                 ->where('task_id', $task->id)
                 ->lockForUpdate()
-                ->count();
+                ->get();
+
+            $attemptsUsed = $attempts->count();
 
             if ($attemptsUsed >= $maxAttempts) {
                 return response()->json([
@@ -143,12 +145,7 @@ class TaskController extends Controller
             }
 
             // هل نجح سابقاً؟
-            $alreadyPassed = TaskAttempt::where('user_id', $user->id)
-                ->where('task_id', $task->id)
-                ->where('passed', true)
-                ->exists();
-
-            if ($alreadyPassed) {
+            if ($attempts->contains('passed', true)) {
                 return response()->json(['message' => 'نجحت في هذه المهمة مسبقاً', 'passed' => true]);
             }
 
