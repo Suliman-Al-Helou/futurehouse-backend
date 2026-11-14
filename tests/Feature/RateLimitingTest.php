@@ -9,6 +9,7 @@ use App\Models\Lesson;
 use App\Models\Section;
 use App\Models\Task;
 use App\Models\User;
+use App\Models\UserLessonProgress;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Laravel\Sanctum\Sanctum;
@@ -99,6 +100,19 @@ class RateLimitingTest extends TestCase
             'pass_percentage' => 70,
             'max_attempts' => 50,
             'cooldown_minutes' => 0,
+        ]);
+
+        UserLessonProgress::create([
+            'user_id' => $student1->id,
+            'lesson_id' => $lesson->id,
+            'watched_percent' => 100,
+            'completed' => true,
+        ]);
+        UserLessonProgress::create([
+            'user_id' => $student2->id,
+            'lesson_id' => $lesson->id,
+            'watched_percent' => 100,
+            'completed' => true,
         ]);
 
         Sanctum::actingAs($student1);

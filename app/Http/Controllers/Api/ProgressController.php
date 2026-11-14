@@ -7,6 +7,8 @@ use App\Http\Requests\UpdateLessonProgressRequest;
 use App\Models\Course;
 use App\Models\Lesson;
 use App\Models\UserLessonProgress;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 
@@ -48,6 +50,50 @@ class ProgressController extends Controller
     }
 
     /**
+     * GET /api/lessons/in-progress
+     * يجلب الدروس قيد المتابعة للطالب (غير مكتملة ونسبة مشاهدتها > 0) دفعة واحدة
+     */
+    public function inProgress(Request $request): JsonResponse
+    {
+        $userId = $request->user()->id;
+
+        $inProgress = UserLessonProgress::query()
+            ->where('user_id', $userId)
+            ->where('completed', false)
+            ->where('watched_percent', '>', 0)
+            ->with(['lesson.section.course'])
+            ->latest('updated_at')
+            ->limit(30)
+            ->get();
+
+        $items = $inProgress->map(function ($item) {
+            $lesson = $item->lesson;
+            $section = $lesson?->section;
+            $course = $section?->course;
+
+            if (! $lesson || ! $section || ! $course) {
+                return null;
+            }
+
+            return [
+                'id' => $lesson->id,
+                'title' => $lesson->title,
+                'watched_percent' => (float) $item->watched_percent,
+                'course' => [
+                    'id' => $course->id,
+                    'title' => $course->title,
+                ],
+                'section' => [
+                    'id' => $section->id,
+                    'title' => $section->title,
+                ],
+            ];
+        })->filter()->values();
+
+        return response()->json($items);
+    }
+
+    /**
      * GET /api/lessons/{id}/progress
      * يجلب آخر تقدم للمستخدم في هذا الدرس
      */
@@ -84,11 +130,13 @@ class ProgressController extends Controller
         $lessonIds = Lesson::whereHas('section', fn ($q) => $q->where('course_id', $courseId))
             ->pluck('id');
 
-        $completedCount = UserLessonProgress::where('user_id', $user->id)
+        $completedLessonIds = UserLessonProgress::where('user_id', $user->id)
             ->whereIn('lesson_id', $lessonIds)
             ->where('completed', true)
-            ->count();
+            ->pluck('lesson_id')
+            ->values();
 
+        $completedCount = $completedLessonIds->count();
         $totalLessons = $lessonIds->count();
         $percent = $totalLessons > 0
             ? (int) round(($completedCount / $totalLessons) * 100)
@@ -97,6 +145,7 @@ class ProgressController extends Controller
         return response()->json([
             'total_lessons' => $totalLessons,
             'completed_count' => $completedCount,
+            'completed_lesson_ids' => $completedLessonIds,
             'percent' => $percent,
             'course_complete' => $percent === 100,
         ]);

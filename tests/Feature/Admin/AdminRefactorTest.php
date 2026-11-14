@@ -522,4 +522,63 @@ class AdminRefactorTest extends TestCase
             ->assertOk()
             ->assertJsonPath('questions.0.question', 'Q1');
     }
+
+    public function test_admin_can_delete_student_user(): void
+    {
+        $student = User::factory()->student()->create();
+
+        $this->deleteJson("/api/admin/users/{$student->id}")
+            ->assertOk()
+            ->assertJson(['message' => 'تم حذف المستخدم بنجاح']);
+
+        $this->assertSoftDeleted('users', ['id' => $student->id]);
+    }
+
+    public function test_admin_cannot_delete_themselves_or_other_admin(): void
+    {
+        $currentAdmin = auth()->user();
+        $this->deleteJson("/api/admin/users/{$currentAdmin->id}")
+            ->assertStatus(403);
+
+        $otherAdmin = User::factory()->admin()->create();
+        $this->deleteJson("/api/admin/users/{$otherAdmin->id}")
+            ->assertStatus(403);
+    }
+
+    public function test_admin_can_update_user_role(): void
+    {
+        $user = User::factory()->student()->create();
+
+        $response = $this->patchJson("/api/admin/users/{$user->id}", [
+            'role' => 'instructor',
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('data.role', 'instructor');
+
+        $this->assertTrue($user->fresh()->hasRole('instructor'));
+    }
+
+    public function test_admin_can_manually_create_enrollment(): void
+    {
+        $course = Course::create(['title' => 'Vue Mastery', 'description' => 'Desc']);
+
+        $response = $this->postJson('/api/admin/enrollments', [
+            'course_id' => $course->id,
+            'student_email' => 'newstudent@example.com',
+            'student_name' => 'New Student',
+            'status' => 'approved',
+            'payment_confirmed' => true,
+        ]);
+
+        $response->assertStatus(201)
+            ->assertJsonPath('data.status', 'approved')
+            ->assertJsonPath('data.payment_confirmed', true)
+            ->assertJsonPath('data.student_email', 'newstudent@example.com');
+
+        $this->assertDatabaseHas('enrollments', [
+            'course_id' => $course->id,
+            'status' => 'approved',
+        ]);
+    }
 }

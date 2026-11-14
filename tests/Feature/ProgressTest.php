@@ -310,4 +310,43 @@ class ProgressTest extends TestCase
             'completed' => true,
         ]);
     }
+
+    public function test_in_progress_lessons_returns_uncompleted_lessons_with_watch_percent(): void
+    {
+        $student = User::factory()->student()->create();
+        $course = Course::factory()->free()->published()->create(['title' => 'Vue 3 Mastery']);
+        $section = Section::factory()->create(['course_id' => $course->id, 'title' => 'Intro']);
+        $lesson1 = Lesson::factory()->create(['section_id' => $section->id, 'title' => 'Lesson 1']);
+        $lesson2 = Lesson::factory()->create(['section_id' => $section->id, 'title' => 'Lesson 2']);
+
+        // Lesson 1 is partially watched (in progress)
+        UserLessonProgress::create([
+            'user_id' => $student->id,
+            'lesson_id' => $lesson1->id,
+            'watched_percent' => 45.5,
+            'completed' => false,
+        ]);
+
+        // Lesson 2 is completed (should not appear in in-progress)
+        UserLessonProgress::create([
+            'user_id' => $student->id,
+            'lesson_id' => $lesson2->id,
+            'watched_percent' => 100,
+            'completed' => true,
+        ]);
+
+        Sanctum::actingAs($student);
+
+        $response = $this->getJson('/api/lessons/in-progress');
+
+        $response->assertOk()
+            ->assertJsonCount(1)
+            ->assertJsonFragment([
+                'id' => $lesson1->id,
+                'title' => 'Lesson 1',
+                'watched_percent' => 45.5,
+            ])
+            ->assertJsonPath('0.course.title', 'Vue 3 Mastery')
+            ->assertJsonPath('0.section.title', 'Intro');
+    }
 }

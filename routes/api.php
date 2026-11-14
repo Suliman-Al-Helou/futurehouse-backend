@@ -58,6 +58,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/my-courses', [EnrollmentController::class, 'myCourses']);
 
     Route::middleware('throttle:lesson-progress')->group(function () {
+        Route::get('/lessons/in-progress', [ProgressController::class, 'inProgress']);
         Route::get('/lessons/{id}/progress', [ProgressController::class, 'show']);
         Route::post('/lessons/{id}/progress', [ProgressController::class, 'update']);
         Route::get('/courses/{course}/progress-summary', [ProgressController::class, 'courseSummary']);
@@ -77,7 +78,10 @@ Route::middleware(['auth:sanctum', 'can:manageAdmin,App\Models\User'])->prefix('
     Route::get('/stats', [AdminController::class, 'stats']);
     Route::get('/users', [AdminController::class, 'users']);
     Route::get('/students', [AdminController::class, 'students']);
+    Route::delete('/users/{user}', [AdminController::class, 'destroyUser']);
+    Route::patch('/users/{user}', [AdminController::class, 'updateUserRole']);
     Route::get('/enrollments', [AdminEnrollmentController::class, 'index']);
+    Route::post('/enrollments', [AdminEnrollmentController::class, 'store']);
     Route::patch('/enrollments/{enrollment}', [AdminEnrollmentController::class, 'update']);
 
     // Courses & Sections (Admin)
