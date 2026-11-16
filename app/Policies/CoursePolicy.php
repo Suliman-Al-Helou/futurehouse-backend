@@ -34,11 +34,15 @@ class CoursePolicy
 
     /**
      * هل يقدر هاد المستخدم يطلب تسجيل (enroll) بهاد الكورس؟
-     * يمنع تسجيل مكرر لو عندو طلب pending أو approved أصلًا، ويمنع
-     * طلب enrollment لكورس مجاني أصلًا (ما إله داعي).
+     * يمنع تسجيل مكرر لو عندو طلب pending أو approved أصلًا،
+     * ويمنع التسجيل إذا كان الكورس غير منشور (draft أو coming_soon).
      */
     public function enroll(User $user, Course $course): bool
     {
+        if ($course->status !== 'published') {
+            return false;
+        }
+
         $existing = $course->enrollments()
             ->where('user_id', $user->id)
             ->first();
