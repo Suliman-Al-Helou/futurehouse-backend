@@ -54,7 +54,9 @@ class AdminVideoAssetController extends Controller
             $query->whereNotIn('provider_video_id', $attachedVideoIds);
         }
 
-        return VideoAssetResource::collection($query->latest()->get());
+        $perPage = min(max($request->integer('per_page', 50), 1), 100);
+
+        return VideoAssetResource::collection($query->latest()->paginate($perPage));
     }
 
     /** Creates a new video asset via direct metadata. */

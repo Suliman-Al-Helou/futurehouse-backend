@@ -25,16 +25,20 @@ class AdminController extends Controller
     /** Lists non-admin users with enrollment counts. */
     public function users(): AnonymousResourceCollection
     {
+        $perPage = min(max(request()->integer('per_page', 50), 1), 100);
+
         return UserAdminResource::collection(
-            User::nonAdmin()->with('roles')->withCount('enrollments')->latest()->get()
+            User::nonAdmin()->with('roles')->withCount('enrollments')->latest()->paginate($perPage)
         );
     }
 
     /** Lists students only with enrollment counts. */
     public function students(): AnonymousResourceCollection
     {
+        $perPage = min(max(request()->integer('per_page', 50), 1), 100);
+
         return UserAdminResource::collection(
-            User::students()->with('roles')->withCount('enrollments')->latest()->get()
+            User::students()->with('roles')->withCount('enrollments')->latest()->paginate($perPage)
         );
     }
 
