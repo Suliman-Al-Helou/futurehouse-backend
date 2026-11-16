@@ -43,6 +43,17 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Load Test Mode
+    |--------------------------------------------------------------------------
+    |
+    | When true, rate limiters are raised to avoid masking DB/app performance.
+    | Only enabled via .env.load for local k6 runs. Never in production.
+    |
+    */
+    'load_test_mode' => (bool) env('LOAD_TEST_MODE', false),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application URL
     |--------------------------------------------------------------------------
     |

@@ -21,6 +21,8 @@ class UploadVideoToYouTubeJob implements ShouldQueue
 
     public int $tries = 2;
 
+    public int $backoff = 60; // 60 seconds delay between retry attempts
+
     public function __construct(
         public readonly VideoAsset $videoAsset,
         public readonly string $filePath
@@ -28,6 +30,13 @@ class UploadVideoToYouTubeJob implements ShouldQueue
 
     public function handle(YouTubeService $youtubeService): void
     {
+        // Strict Idempotency: If already uploaded and marked ready, skip duplicate processing
+        if ($this->videoAsset->status === 'ready' && ! empty($this->videoAsset->provider_video_id)) {
+            Log::info("Skipping upload for video asset {$this->videoAsset->id}: already processed and ready.");
+
+            return;
+        }
+
         $this->videoAsset->update(['status' => 'processing']);
 
         try {
@@ -66,5 +75,11 @@ class UploadVideoToYouTubeJob implements ShouldQueue
             $this->videoAsset->update(['status' => 'failed']);
             throw $e;
         }
+    }
+
+    public function failed(?\Throwable $exception): void
+    {
+        Log::error("Permanent failure uploading video asset {$this->videoAsset->id} to YouTube: ".($exception?->getMessage() ?? 'Unknown error'));
+        $this->videoAsset->update(['status' => 'failed']);
     }
 }

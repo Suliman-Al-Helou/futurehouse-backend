@@ -3,11 +3,19 @@
 namespace App\Providers;
 
 use App\Models\Course;
+use App\Models\Enrollment;
 use App\Models\Lesson;
+use App\Models\TaskAttempt;
 use App\Models\User;
+use App\Models\UserLessonProgress;
+use App\Models\ZoomAttendance;
 use App\Policies\CoursePolicy;
+use App\Policies\EnrollmentPolicy;
 use App\Policies\LessonPolicy;
+use App\Policies\TaskAttemptPolicy;
+use App\Policies\UserLessonProgressPolicy;
 use App\Policies\UserPolicy;
+use App\Policies\ZoomAttendancePolicy;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
@@ -35,21 +43,16 @@ class AppServiceProvider extends ServiceProvider
         );
 
         // 3. حماية عملية تغيير الباسورد الفعلي
-        RateLimiter::for('reset-password', function (Request $r) {
-            $email = is_string($r->input('email')) ? Str::lower($r->input('email')).'.'.$r->ip() : '';
-
-            return Limit::perMinute(5)->by($email.$r->ip());
-        });
+        RateLimiter::for('reset-password', fn (Request $r) => Limit::perMinute(5)->by(Str::lower((string) $r->input('email')).'|'.$r->ip()));
 
         // 4. حماية مسار طلب رابط الاستعادة لمنع إغراق السيرفر
-        RateLimiter::for('forgot-password', function (Request $r) {
-            $email = is_string($r->input('email')) ? Str::lower($r->input('email')).'.'.$r->ip() : '';
-
-            return Limit::perMinute(3)->by($email.$r->ip());
-        });
+        RateLimiter::for('forgot-password', fn (Request $r) => Limit::perMinute(3)->by(Str::lower((string) $r->input('email')).'|'.$r->ip()));
 
         // 5. حماية التصفح العام للكورسات (60 بالدقيقة لكل IP)
-        RateLimiter::for('courses-public', fn (Request $r) => Limit::perMinute(60)->by($r->ip()));
+        // In load-test mode, raise to 10000/min so we measure DB/app perf, not the limiter
+        // (Rate-limiting correctness was already proven in Phase 3)
+        $publicCourseLimit = config('app.load_test_mode') ? 10000 : 60;
+        RateLimiter::for('courses-public', fn (Request $r) => Limit::perMinute($publicCourseLimit)->by($r->ip()));
 
         // 6. حماية لوحة تحكم الكورسات والأقسام للأدمن (60 بالدقيقة لكل مستخدم)
         RateLimiter::for('courses-admin', fn (Request $r) => Limit::perMinute(60)->by($r->user()?->id ?: $r->ip()));
@@ -62,6 +65,10 @@ class AppServiceProvider extends ServiceProvider
 
         // 9. حماية تسليم مهام الدروس (20 بالدقيقة لكل مستخدم)
         RateLimiter::for('task-submit', fn (Request $r) => Limit::perMinute(20)->by($r->user()?->id ?: $r->ip()));
+
+        // 10. حماية تسجيل الحضور في اللقاءات المباشرة (10 بالدقيقة لكل مستخدم)
+        $attendanceLimit = config('app.load_test_mode') ? 10000 : 10;
+        RateLimiter::for('attendance-submit', fn (Request $r) => Limit::perMinute($attendanceLimit)->by($r->user()?->id ?: $r->ip()));
         DB::listen(function ($query) {
             if ($query->time > 50) {
                 Log::info("SLOW QUERY ({$query->time}ms): {$query->sql}");
@@ -82,5 +89,9 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(User::class, UserPolicy::class);
         Gate::policy(Course::class, CoursePolicy::class);
         Gate::policy(Lesson::class, LessonPolicy::class);
+        Gate::policy(Enrollment::class, EnrollmentPolicy::class);
+        Gate::policy(TaskAttempt::class, TaskAttemptPolicy::class);
+        Gate::policy(UserLessonProgress::class, UserLessonProgressPolicy::class);
+        Gate::policy(ZoomAttendance::class, ZoomAttendancePolicy::class);
     }
 }

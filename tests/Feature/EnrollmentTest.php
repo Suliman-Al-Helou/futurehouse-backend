@@ -166,6 +166,7 @@ class EnrollmentTest extends TestCase
             'title' => 'Re-enroll Course',
             'description' => 'Desc',
             'is_public' => false,
+            'status' => 'published',
             'students_count' => 0,
         ]);
 
@@ -198,6 +199,7 @@ class EnrollmentTest extends TestCase
             'title' => 'Check Status Course',
             'description' => 'Desc',
             'is_public' => false,
+            'status' => 'published',
         ]);
 
         // Not enrolled
@@ -293,5 +295,71 @@ class EnrollmentTest extends TestCase
     {
         $enrollment = new Enrollment;
         $this->assertNotContains('deleted_at', $enrollment->getFillable());
+    }
+
+    public function test_student_cannot_enroll_in_draft_or_coming_soon_course(): void
+    {
+        $student = User::factory()->student()->create();
+        Sanctum::actingAs($student);
+
+        $draftCourse = Course::create([
+            'title' => 'Draft Course',
+            'description' => 'Draft Description',
+            'is_public' => false,
+            'price' => 50,
+            'status' => 'draft',
+        ]);
+
+        $comingSoonCourse = Course::create([
+            'title' => 'Coming Soon Course',
+            'description' => 'Coming Soon Description',
+            'is_public' => false,
+            'price' => 50,
+            'status' => 'coming_soon',
+        ]);
+
+        $this->postJson("/api/courses/{$draftCourse->id}/enroll")
+            ->assertForbidden();
+
+        $this->postJson("/api/courses/{$comingSoonCourse->id}/enroll")
+            ->assertForbidden();
+
+        $this->assertDatabaseMissing('enrollments', [
+            'user_id' => $student->id,
+            'course_id' => $draftCourse->id,
+        ]);
+        $this->assertDatabaseMissing('enrollments', [
+            'user_id' => $student->id,
+            'course_id' => $comingSoonCourse->id,
+        ]);
+    }
+
+    public function test_student_cannot_duplicate_enroll_when_pending_or_approved(): void
+    {
+        $student = User::factory()->student()->create();
+        Sanctum::actingAs($student);
+
+        $course = Course::create([
+            'title' => 'Published Course',
+            'description' => 'Description',
+            'is_public' => false,
+            'price' => 100,
+            'status' => 'published',
+        ]);
+
+        // First enroll: succeeds with 201
+        $this->postJson("/api/courses/{$course->id}/enroll")->assertCreated();
+
+        // Second enroll attempt: forbidden because already pending
+        $this->postJson("/api/courses/{$course->id}/enroll")->assertForbidden();
+
+        // Approve enrollment
+        Enrollment::where('user_id', $student->id)->where('course_id', $course->id)->update(['status' => 'approved']);
+
+        // Third enroll attempt: forbidden because already approved
+        $this->postJson("/api/courses/{$course->id}/enroll")->assertForbidden();
+
+        // Count in DB must still be exactly 1
+        $this->assertSame(1, Enrollment::where('user_id', $student->id)->where('course_id', $course->id)->count());
     }
 }

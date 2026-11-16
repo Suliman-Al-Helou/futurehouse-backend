@@ -9,6 +9,7 @@ use App\Http\Requests\ChunkUploadRequest;
 use App\Http\Requests\VideoAssetRequest;
 use App\Http\Resources\VideoAssetResource;
 use App\Jobs\UploadVideoToYouTubeJob;
+use App\Models\Lesson;
 use App\Models\VideoAsset;
 use App\Services\YouTubeService;
 use Illuminate\Http\JsonResponse;
@@ -45,7 +46,17 @@ class AdminVideoAssetController extends Controller
             $query->where('type', (string) $request->input('type'));
         }
 
-        return VideoAssetResource::collection($query->latest()->get());
+        if ($request->boolean('unattached')) {
+            $attachedVideoIds = Lesson::query()
+                ->whereNotNull('video_id')
+                ->pluck('video_id');
+
+            $query->whereNotIn('provider_video_id', $attachedVideoIds);
+        }
+
+        $perPage = min(max($request->integer('per_page', 50), 1), 100);
+
+        return VideoAssetResource::collection($query->latest()->paginate($perPage));
     }
 
     /** Creates a new video asset via direct metadata. */

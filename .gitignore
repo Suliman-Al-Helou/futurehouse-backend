@@ -3,6 +3,9 @@
 .env
 .env.backup
 .env.production
+.env.load
+.env.e2e
+tests/K6/tokens.json
 .phpactor.json
 .phpunit.result.cache
 /.codex

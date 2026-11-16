@@ -66,14 +66,17 @@ jobs:
         run: composer install --no-interaction --prefer-dist --optimize-autoloader
 
       - name: Check Code Style (Laravel Pint)
-        run: vendor/bin/pint --test app/Http/Controllers/Api/Auth app/Http/Controllers/Api/Admin app/Services app/Http/Resources app/Http/Requests tests/Feature
+        run: vendor/bin/pint --test
+
+      - name: Static Analysis (Larastan Level 5)
+        run: vendor/bin/phpstan analyse --memory-limit=1G
 
       - name: Prepare Environment File
         run: |
           cp .env.example .env
           php artisan key:generate
 
-      - name: Execute Automated Tests (PostgreSQL)
+      - name: Execute Automated Tests (PostgreSQL Parallel)
         env:
           DB_CONNECTION: pgsql
           DB_HOST: 127.0.0.1
@@ -82,7 +85,7 @@ jobs:
           DB_USERNAME: test_user
           DB_PASSWORD: test_password
           DB_SSLMODE: prefer
-        run: php artisan test
+        run: php artisan test --parallel
 
       - name: Verify Docker Build
         run: docker build -t futurehouse-backend:ci .

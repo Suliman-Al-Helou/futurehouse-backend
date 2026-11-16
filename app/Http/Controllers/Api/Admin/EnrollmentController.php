@@ -24,10 +24,12 @@ class EnrollmentController extends Controller
     ) {}
 
     /** Lists all enrollments with user and course (eager-loaded). */
-    public function index(): AnonymousResourceCollection
+    public function index(Request $request): AnonymousResourceCollection
     {
+        $perPage = min(max($request->integer('per_page', 50), 1), 100);
+
         return EnrollmentResource::collection(
-            Enrollment::with(['user', 'course'])->latest()->get()
+            Enrollment::with(['user', 'course'])->latest()->paginate($perPage)
         );
     }
 

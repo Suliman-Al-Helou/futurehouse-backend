@@ -1,0 +1,1028 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Relation ''instructor'' is not found in App\\Models\\Course model\.$#'
+			identifier: larastan.relationExistence
+			count: 3
+			path: app/Http/Controllers/Api/Admin/AdminCourseController.php
+
+		-
+			message: '#^If condition is always true\.$#'
+			identifier: if.alwaysTrue
+			count: 1
+			path: app/Http/Controllers/Api/Admin/AdminVideoAssetController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/Api/Admin/AdminVideoAssetController.php
+
+		-
+			message: '#^Relation ''attendances'' is not found in App\\Models\\ZoomMeeting model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/Api/Admin/AdminZoomMeetingController.php
+
+		-
+			message: '#^Relation ''course'' is not found in App\\Models\\ZoomMeeting model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/Api/Admin/AdminZoomMeetingController.php
+
+		-
+			message: '#^Relation ''course'' is not found in App\\Models\\Enrollment model\.$#'
+			identifier: larastan.relationExistence
+			count: 2
+			path: app/Http/Controllers/Api/Admin/EnrollmentController.php
+
+		-
+			message: '#^Relation ''user'' is not found in App\\Models\\Enrollment model\.$#'
+			identifier: larastan.relationExistence
+			count: 2
+			path: app/Http/Controllers/Api/Admin/EnrollmentController.php
+
+		-
+			message: '#^Relation ''courses'' is not found in App\\Models\\Instructor model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/Api/Admin/InstructorController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Course\:\:\$sections\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Api/Admin/SectionController.php
+
+		-
+			message: '#^Relation ''sections'' is not found in App\\Models\\Course model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/Api/Admin/SectionController.php
+
+		-
+			message: '#^Relation ''enrollments'' is not found in App\\Models\\User model\.$#'
+			identifier: larastan.relationExistence
+			count: 3
+			path: app/Http/Controllers/Api/AdminController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Enrollment\:\:\$course\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Api/EnrollmentController.php
+
+		-
+			message: '#^Relation ''course'' is not found in App\\Models\\Enrollment model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/Api/EnrollmentController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\UserLessonProgress\:\:\$lesson\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Api/ProgressController.php
+
+		-
+			message: '#^Left side of && is always true\.$#'
+			identifier: booleanAnd.leftAlwaysTrue
+			count: 1
+			path: app/Http/Controllers/Api/ProgressController.php
+
+		-
+			message: '#^Relation ''lesson'' is not found in App\\Models\\UserLessonProgress model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/Api/ProgressController.php
+
+		-
+			message: '#^Relation ''section'' is not found in App\\Models\\Lesson model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/Api/ProgressController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>completed" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/Api/ProgressController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>last_position" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/Api/ProgressController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>watched_percent" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Http/Controllers/Api/ProgressController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Lesson\:\:\$task\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Api/TaskController.php
+
+		-
+			message: '#^Relation ''task'' is not found in App\\Models\\Lesson model\.$#'
+			identifier: larastan.relationExistence
+			count: 2
+			path: app/Http/Controllers/Api/TaskController.php
+
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>watched_percent" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Http/Controllers/Api/TaskController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Enrollment\:\:\$course\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Api/ZoomMeetingController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ZoomMeeting\:\:\$course\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Api/ZoomMeetingController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ZoomMeeting\:\:\$course_name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Api/ZoomMeetingController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\ZoomMeeting\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/Api/ZoomMeetingController.php
+
+		-
+			message: '#^Relation ''course'' is not found in App\\Models\\Enrollment model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/Api/ZoomMeetingController.php
+
+		-
+			message: '#^Relation ''course'' is not found in App\\Models\\ZoomMeeting model\.$#'
+			identifier: larastan.relationExistence
+			count: 2
+			path: app/Http/Controllers/Api/ZoomMeetingController.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between Carbon\\Carbon and null will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Http/Controllers/Api/ZoomMeetingController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>title" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/Api/ZoomMeetingController.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CourseAdminResource\:\:\$cover_image\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CourseAdminResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CourseAdminResource\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CourseAdminResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CourseAdminResource\:\:\$description\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CourseAdminResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CourseAdminResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CourseAdminResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CourseAdminResource\:\:\$instructor\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CourseAdminResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CourseAdminResource\:\:\$is_popular\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CourseAdminResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CourseAdminResource\:\:\$is_public\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CourseAdminResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CourseAdminResource\:\:\$level\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CourseAdminResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CourseAdminResource\:\:\$price\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CourseAdminResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CourseAdminResource\:\:\$rating\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CourseAdminResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CourseAdminResource\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CourseAdminResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CourseAdminResource\:\:\$title\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CourseAdminResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CourseAdminResource\:\:\$total_duration\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CourseAdminResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CourseAdminResource\:\:\$updated_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CourseAdminResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CourseAdminResource\:\:\$youtube_playlist_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CourseAdminResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CourseDetailResource\:\:\$cover_image\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CourseDetailResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CourseDetailResource\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CourseDetailResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CourseDetailResource\:\:\$description\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CourseDetailResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CourseDetailResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CourseDetailResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CourseDetailResource\:\:\$instructor_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CourseDetailResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CourseDetailResource\:\:\$instructor_name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CourseDetailResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CourseDetailResource\:\:\$is_popular\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CourseDetailResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CourseDetailResource\:\:\$is_public\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CourseDetailResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CourseDetailResource\:\:\$level\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CourseDetailResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CourseDetailResource\:\:\$price\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CourseDetailResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CourseDetailResource\:\:\$rating\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CourseDetailResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CourseDetailResource\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CourseDetailResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CourseDetailResource\:\:\$title\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CourseDetailResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CourseDetailResource\:\:\$total_duration\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CourseDetailResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CourseDetailResource\:\:\$updated_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CourseDetailResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CourseResource\:\:\$cover_image\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CourseResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CourseResource\:\:\$description\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CourseResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CourseResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CourseResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CourseResource\:\:\$is_public\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CourseResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CourseResource\:\:\$level\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CourseResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CourseResource\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CourseResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CourseResource\:\:\$title\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CourseResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CourseResource\:\:\$total_duration\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CourseResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CourseSummaryResource\:\:\$cover_image\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CourseSummaryResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CourseSummaryResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CourseSummaryResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CourseSummaryResource\:\:\$level\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CourseSummaryResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CourseSummaryResource\:\:\$title\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CourseSummaryResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CourseSummaryResource\:\:\$total_duration\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CourseSummaryResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\EnrollmentResource\:\:\$course\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Resources/EnrollmentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\EnrollmentResource\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/EnrollmentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\EnrollmentResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/EnrollmentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\EnrollmentResource\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Resources/EnrollmentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\EnrollmentResource\:\:\$user\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Http/Resources/EnrollmentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\FaqAdminResource\:\:\$answer\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/FaqAdminResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\FaqAdminResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/FaqAdminResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\FaqAdminResource\:\:\$order\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/FaqAdminResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\FaqAdminResource\:\:\$question\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/FaqAdminResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\FaqResource\:\:\$answer\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/FaqResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\FaqResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/FaqResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\FaqResource\:\:\$order\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/FaqResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\FaqResource\:\:\$question\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/FaqResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\InstructorResource\:\:\$avatar_url\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/InstructorResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\InstructorResource\:\:\$bio\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/InstructorResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\InstructorResource\:\:\$cover_url\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/InstructorResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\InstructorResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/InstructorResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\InstructorResource\:\:\$linkedin\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/InstructorResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\InstructorResource\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/InstructorResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\InstructorResource\:\:\$rating\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/InstructorResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\InstructorResource\:\:\$students_count\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/InstructorResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\InstructorResource\:\:\$title\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/InstructorResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\InstructorResource\:\:\$total_reviews\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/InstructorResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\InstructorResource\:\:\$twitter\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/InstructorResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\InstructorResource\:\:\$years_experience\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/InstructorResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\InstructorResource\:\:\$youtube\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/InstructorResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\LessonResource\:\:\$description\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/LessonResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\LessonResource\:\:\$duration\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/LessonResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\LessonResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/LessonResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\LessonResource\:\:\$is_preview\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/LessonResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\LessonResource\:\:\$order\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/LessonResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\LessonResource\:\:\$section_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/LessonResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\LessonResource\:\:\$title\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/LessonResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\LessonResource\:\:\$video_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/LessonResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\SectionResource\:\:\$course_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/SectionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\SectionResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/SectionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\SectionResource\:\:\$order\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/SectionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\SectionResource\:\:\$title\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/SectionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\TaskResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/TaskResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\TaskResource\:\:\$lesson_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/TaskResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\TaskResource\:\:\$max_attempts\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/TaskResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\TaskResource\:\:\$pass_percentage\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/TaskResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\TaskResource\:\:\$questions\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/TaskResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserAdminResource\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserAdminResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserAdminResource\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserAdminResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserAdminResource\:\:\$enrollments_count\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserAdminResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserAdminResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserAdminResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserAdminResource\:\:\$is_active\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserAdminResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserAdminResource\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserAdminResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserAdminResource\:\:\$role\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserAdminResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$role\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\VideoAssetResource\:\:\$course\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Http/Resources/VideoAssetResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\VideoAssetResource\:\:\$course_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/VideoAssetResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\VideoAssetResource\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/VideoAssetResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\VideoAssetResource\:\:\$created_by\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/VideoAssetResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\VideoAssetResource\:\:\$creator\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Resources/VideoAssetResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\VideoAssetResource\:\:\$description\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/VideoAssetResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\VideoAssetResource\:\:\$duration_seconds\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/VideoAssetResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\VideoAssetResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/VideoAssetResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\VideoAssetResource\:\:\$provider\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/VideoAssetResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\VideoAssetResource\:\:\$provider_video_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/VideoAssetResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\VideoAssetResource\:\:\$title\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/VideoAssetResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\VideoAssetResource\:\:\$type\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/VideoAssetResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\VideoAssetResource\:\:\$updated_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/VideoAssetResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\VideoAssetResource\:\:\$zoomMeeting\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Http/Resources/VideoAssetResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\VideoAssetResource\:\:\$zoom_meeting_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/VideoAssetResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ZoomMeetingResource\:\:\$course\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Resources/ZoomMeetingResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ZoomMeetingResource\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ZoomMeetingResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ZoomMeetingResource\:\:\$description\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ZoomMeetingResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ZoomMeetingResource\:\:\$duration_minutes\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ZoomMeetingResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ZoomMeetingResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ZoomMeetingResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ZoomMeetingResource\:\:\$starts_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ZoomMeetingResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ZoomMeetingResource\:\:\$title\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ZoomMeetingResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ZoomMeetingResource\:\:\$zoom_link\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ZoomMeetingResource.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$title\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Jobs/UploadVideoToYouTubeJob.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$youtube_playlist_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Jobs/UploadVideoToYouTubeJob.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Course\:\:\$instructor\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/Course.php
+
+		-
+			message: '#^Relation ''enrollments'' is not found in App\\Models\\Course model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Models/Course.php
+
+		-
+			message: '#^Relation ''instructor'' is not found in App\\Models\\Course model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Models/Course.php
+
+		-
+			message: '#^Relation ''sections'' is not found in App\\Models\\Course model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Models/Course.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Lesson\:\:\$section\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/Lesson.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\:\:role\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\:\:withoutRole\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^Called ''env'' outside of the config directory which returns null when the config is cached, use ''config''\.$#'
+			identifier: larastan.noEnvCallsOutsideOfConfig
+			count: 1
+			path: app/Notifications/ResetPasswordNotification.php
+
+		-
+			message: '#^Called ''count'' on Laravel collection, but could have been retrieved as a query\.$#'
+			identifier: larastan.noUnnecessaryCollectionCall
+			count: 1
+			path: app/Queries/StudentDashboardQuery.php
+
+		-
+			message: '#^Relation ''task'' is not found in App\\Models\\TaskAttempt model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Queries/StudentDashboardQuery.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>title" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Queries/StudentDashboardQuery.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Enrollment\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\Enrollment\>\:\:\$course\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/EnrollmentService.php
+
+		-
+			message: '#^Relation ''course'' is not found in App\\Models\\Enrollment model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Services/EnrollmentService.php
+
+		-
+			message: '#^Relation ''user'' is not found in App\\Models\\Enrollment model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Services/EnrollmentService.php
+
+		-
+			message: '#^Relation ''courses'' is not found in App\\Models\\Instructor model\.$#'
+			identifier: larastan.relationExistence
+			count: 2
+			path: app/Services/InstructorService.php
+
+		-
+			message: '#^Called ''env'' outside of the config directory which returns null when the config is cached, use ''config''\.$#'
+			identifier: larastan.noEnvCallsOutsideOfConfig
+			count: 4
+			path: app/Services/YouTubeService.php
+
+		-
+			message: '#^Parameter \#4 \$data of class Google\\Http\\MediaFileUpload constructor expects string, null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/YouTubeService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ZoomMeeting\:\:\$course\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/ZoomService.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\User\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Services/ZoomService.php
+
+		-
+			message: '#^Relation ''course'' is not found in App\\Models\\ZoomMeeting model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Services/ZoomService.php

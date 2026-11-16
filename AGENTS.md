@@ -23,6 +23,9 @@ the docs laravel to create api resource for it .
 - For each feature, update or add tests for the acceptance criteria.
 - Run the relevant tests after making changes and report the exact command and result.
 - Update the relevant documentation when API behavior or domain rules change.
+- **Architectural Route Matrix Coverage:** Every registered API route under `api/*` MUST have a matching entry in `tests/Feature/Auth/RoleEndpointMatrixTest.php` for `(guest, student, admin)`. Missing routes fail CI.
+- **User-Owned Model Policy Mandate:** Any Eloquent model that is user-owned (has `user_id`) MUST have an explicit Policy in `app/Policies/` registered in `AppServiceProvider.php` and covered by feature tests.
+- **Strict PHP Attributes:** Use PHP 8 Attributes (`#[DataProvider]`, etc.) in Pest and PHPUnit 11 tests instead of legacy docblock annotations.
 
 ## Laravel Boost Context
 - Advanced framework guidelines and specialized tools are located inside the `.ai/guidelines/` and `.ai/rules/` directories.

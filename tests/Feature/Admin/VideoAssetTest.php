@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Admin;
 
+use App\Jobs\UploadVideoToYouTubeJob;
 use App\Models\Course;
 use App\Models\PlatformSetting;
 use App\Models\User;
@@ -296,6 +297,8 @@ class VideoAssetTest extends TestCase
             'course_id' => $this->course->id,
             'title' => 'Chunked Video Lesson',
         ]);
+
+        Queue::assertPushed(UploadVideoToYouTubeJob::class);
     }
 
     public function test_admin_can_query_youtube_status_and_auth_url(): void
