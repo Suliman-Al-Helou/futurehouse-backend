@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\CourseDetailResource;
 use App\Http\Resources\CourseResource;
 use App\Models\Course;
+use App\Support\ContentCache;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -27,6 +28,8 @@ class CourseController extends Controller
 
         // مفتاح كاش ديناميكي يعزل كاش صفحة الهبوط (limit_3) عن كاش الكتالوج الكامل
         $cacheKey = 'courses:published:'.($level ?? 'all').($limit ? ":limit_{$limit}" : '');
+
+        ContentCache::trackCourseKey($cacheKey);
 
         $courses = Cache::remember($cacheKey, 300, function () use ($level, $limit) {
             $query = Course::forPublicList($level);

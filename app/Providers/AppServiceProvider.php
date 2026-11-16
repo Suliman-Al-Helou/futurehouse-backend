@@ -47,6 +47,21 @@ class AppServiceProvider extends ServiceProvider
 
             return Limit::perMinute(3)->by($email.$r->ip());
         });
+
+        // 5. حماية التصفح العام للكورسات (60 بالدقيقة لكل IP)
+        RateLimiter::for('courses-public', fn (Request $r) => Limit::perMinute(60)->by($r->ip()));
+
+        // 6. حماية لوحة تحكم الكورسات والأقسام للأدمن (60 بالدقيقة لكل مستخدم)
+        RateLimiter::for('courses-admin', fn (Request $r) => Limit::perMinute(60)->by($r->user()?->id ?: $r->ip()));
+
+        // 7. حماية عمليات التسجيل وإلغاء التسجيل في الكورسات (15 بالدقيقة لكل مستخدم)
+        RateLimiter::for('course-enroll', fn (Request $r) => Limit::perMinute(15)->by($r->user()?->id ?: $r->ip()));
+
+        // 8. حماية تتبع تقدم الدروس وملخص الكورس (60 بالدقيقة لكل مستخدم)
+        RateLimiter::for('lesson-progress', fn (Request $r) => Limit::perMinute(60)->by($r->user()?->id ?: $r->ip()));
+
+        // 9. حماية تسليم مهام الدروس (20 بالدقيقة لكل مستخدم)
+        RateLimiter::for('task-submit', fn (Request $r) => Limit::perMinute(20)->by($r->user()?->id ?: $r->ip()));
         DB::listen(function ($query) {
             if ($query->time > 50) {
                 Log::info("SLOW QUERY ({$query->time}ms): {$query->sql}");

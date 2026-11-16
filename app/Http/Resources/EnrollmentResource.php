@@ -11,7 +11,11 @@ class EnrollmentResource extends JsonResource
         return [
             'id' => $this->id,
             'status' => $this->status,
+            'payment_confirmed' => $this->status === 'approved',
             'created_at' => $this->created_at,
+            'student_name' => $this->user?->name,
+            'student_email' => $this->user?->email,
+            'course_title' => $this->course?->title,
             'user' => $this->user ? [
                 'id' => $this->user->id,
                 'name' => $this->user->name,
@@ -20,6 +24,8 @@ class EnrollmentResource extends JsonResource
             'course' => $this->course ? [
                 'id' => $this->course->id,
                 'title' => $this->course->title,
+                'price' => $this->course->price ?? 0,
+                'level' => $this->course->level ?? 'beginner',
             ] : null,
         ];
     }

@@ -6,17 +6,18 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-// google authentication 
-public function up(): void
-{
-    Schema::table('users', function (Blueprint $table) {
-        $table->string('google_id')->nullable()->unique()->after('email');
-    });
-}
-public function down(): void
-{
-    Schema::table('users', function (Blueprint $table) {
-        $table->dropColumn(['google_id']);
-    });
-}
+    // google authentication
+    public function up(): void
+    {
+        Schema::table('users', function (Blueprint $table) {
+            $table->string('google_id')->nullable()->unique()->after('email');
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropColumn(['google_id']);
+        });
+    }
 };

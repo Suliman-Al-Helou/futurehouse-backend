@@ -26,8 +26,11 @@ class StoreCourseRequest extends FormRequest
             'price' => ['nullable', 'numeric', 'min:0'],
             'is_public' => ['boolean'],
             'what_you_learn' => ['nullable', 'array'],
+            'what_you_learn.*' => ['string', 'max:500'],
             'requirements' => ['nullable', 'array'],
+            'requirements.*' => ['string', 'max:500'],
             'target_audience' => ['nullable', 'array'],
+            'target_audience.*' => ['string', 'max:500'],
         ];
     }
 

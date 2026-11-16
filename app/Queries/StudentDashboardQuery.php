@@ -65,6 +65,7 @@ final class StudentDashboardQuery
             })
             ->where('e.user_id', $userId)
             ->where('e.status', 'approved')
+            ->whereNull('e.deleted_at')
             ->groupBy('e.course_id')
             ->havingRaw('COUNT(l.id) > 0 AND COUNT(l.id) = COUNT(p.id)')
             ->select('e.course_id')

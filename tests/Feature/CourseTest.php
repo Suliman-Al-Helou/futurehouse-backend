@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Http\Resources\CourseDetailResource;
 use App\Models\Course;
 use App\Models\Enrollment;
 use App\Models\Instructor;
@@ -245,6 +246,172 @@ class CourseTest extends TestCase
         // When instructor relation is loaded, it should return the name
         $course->load('instructor');
         $this->assertSame('Sarah Connor', $course->instructor_name);
+    }
+
+    public function test_public_courses_index_applies_limit_parameter(): void
+    {
+        for ($i = 1; $i <= 4; $i++) {
+            Course::create([
+                'title' => "Course {$i}",
+                'description' => "Desc {$i}",
+                'status' => 'published',
+            ]);
+        }
+
+        $response = $this->getJson('/api/courses?limit=2');
+
+        $response->assertOk()
+            ->assertJsonCount(2, 'data');
+    }
+
+    public function test_public_courses_index_caches_resolved_resource_array_keyed_by_limit(): void
+    {
+        for ($i = 1; $i <= 3; $i++) {
+            Course::create([
+                'title' => "Course {$i}",
+                'description' => "Desc {$i}",
+                'status' => 'published',
+            ]);
+        }
+
+        $this->getJson('/api/courses?limit=2')->assertOk();
+
+        $cacheKey = 'courses:published:all:limit_2';
+        $this->assertTrue(Cache::has($cacheKey));
+
+        $cachedData = Cache::get($cacheKey);
+        $this->assertIsArray($cachedData);
+        $this->assertCount(2, $cachedData);
+        $this->assertIsArray($cachedData[0]);
+        $this->assertArrayHasKey('id', $cachedData[0]);
+        $this->assertArrayHasKey('title', $cachedData[0]);
+
+        // Default call without limit uses the base cache key
+        $this->getJson('/api/courses')->assertOk();
+        $this->assertTrue(Cache::has('courses:published:all'));
+        $cachedAll = Cache::get('courses:published:all');
+        $this->assertIsArray($cachedAll);
+        $this->assertCount(3, $cachedAll);
+    }
+
+    public function test_public_courses_index_invalidates_dynamic_limit_cache_keys_on_content_change(): void
+    {
+        for ($i = 1; $i <= 3; $i++) {
+            Course::create([
+                'title' => "Course {$i}",
+                'description' => "Desc {$i}",
+                'status' => 'published',
+            ]);
+        }
+
+        $this->getJson('/api/courses?limit=2')->assertOk();
+        $this->assertTrue(Cache::has('courses:published:all:limit_2'));
+
+        // Creating a new course triggers ContentCache::forgetCourses()
+        Course::create([
+            'title' => 'Course 4',
+            'description' => 'Desc 4',
+            'status' => 'published',
+        ]);
+
+        $this->assertFalse(Cache::has('courses:published:all:limit_2'));
+        $this->assertFalse(Cache::has('courses:published:all'));
+    }
+
+    public function test_public_courses_index_ignores_non_positive_limit(): void
+    {
+        for ($i = 1; $i <= 3; $i++) {
+            Course::create([
+                'title' => "Course {$i}",
+                'description' => "Desc {$i}",
+                'status' => 'published',
+            ]);
+        }
+
+        $responseNeg = $this->getJson('/api/courses?limit=-5');
+        $responseNeg->assertOk()->assertJsonCount(3, 'data');
+
+        $responseZero = $this->getJson('/api/courses?limit=0');
+        $responseZero->assertOk()->assertJsonCount(3, 'data');
+
+        $responseStr = $this->getJson('/api/courses?limit=abc');
+        $responseStr->assertOk()->assertJsonCount(3, 'data');
+    }
+
+    public function test_public_courses_index_works_with_file_cache_store(): void
+    {
+        config(['cache.default' => 'file']);
+
+        Course::create([
+            'title' => 'File Cached Course',
+            'description' => 'Desc',
+            'status' => 'published',
+        ]);
+
+        $response = $this->getJson('/api/courses?limit=1');
+        $response->assertOk()->assertJsonCount(1, 'data');
+
+        // Second hit loads from file cache, verifying unserialize into array without __PHP_Incomplete_Class
+        $response2 = $this->getJson('/api/courses?limit=1');
+        $response2->assertOk()->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.title', 'File Cached Course');
+    }
+
+    public function test_public_course_show_students_count_uses_approved_count_over_cached_counter(): void
+    {
+        $course = Course::create([
+            'title' => 'Counter Test Course',
+            'description' => 'Desc',
+            'status' => 'published',
+            'students_count' => 99,
+        ]);
+
+        $student1 = User::factory()->student()->create();
+        $student2 = User::factory()->student()->create();
+        $student3 = User::factory()->student()->create();
+        $student4 = User::factory()->student()->create();
+
+        // 2 approved
+        Enrollment::create(['user_id' => $student1->id, 'course_id' => $course->id, 'status' => 'approved']);
+        Enrollment::create(['user_id' => $student2->id, 'course_id' => $course->id, 'status' => 'approved']);
+        // 1 pending
+        Enrollment::create(['user_id' => $student3->id, 'course_id' => $course->id, 'status' => 'pending']);
+        // 1 rejected
+        Enrollment::create(['user_id' => $student4->id, 'course_id' => $course->id, 'status' => 'rejected']);
+
+        $response = $this->getJson("/api/courses/{$course->id}");
+
+        $response->assertOk()
+            ->assertJsonPath('data.students_count', 2);
+    }
+
+    public function test_public_course_show_students_count_falls_back_when_no_enrollments(): void
+    {
+        $course = Course::create([
+            'title' => 'Empty Course',
+            'description' => 'Desc',
+            'status' => 'published',
+            'students_count' => 0,
+        ]);
+
+        $response = $this->getJson("/api/courses/{$course->id}");
+
+        $response->assertOk()
+            ->assertJsonPath('data.students_count', 0);
+    }
+
+    public function test_course_detail_resource_falls_back_to_students_count_attribute_when_approved_count_not_loaded(): void
+    {
+        $course = Course::create([
+            'title' => 'Direct Resource Course',
+            'description' => 'Desc',
+            'students_count' => 42,
+        ]);
+
+        $resource = new CourseDetailResource($course);
+        $array = $resource->toArray(request());
+
+        $this->assertSame(42, $array['students_count']);
     }
 
     public function test_free_course_enroll_creates_approved_enrollment_immediately(): void

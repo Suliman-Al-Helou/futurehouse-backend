@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
 class TaskAttempt extends Model
 {
@@ -14,8 +14,8 @@ class TaskAttempt extends Model
     ];
 
     protected $casts = [
-        'answers'      => 'array',
-        'passed'       => 'boolean',
+        'answers' => 'array',
+        'passed' => 'boolean',
         'attempted_at' => 'datetime',
     ];
 

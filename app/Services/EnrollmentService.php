@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Models\Course;
 use App\Models\Enrollment;
 use App\Support\ContentCache;
 use Illuminate\Support\Facades\DB;
@@ -46,7 +47,16 @@ final class EnrollmentService
                 ]);
             }
 
+            $oldStatus = $current->status;
             $current->update(['status' => $to]);
+
+            if ($oldStatus !== 'approved' && $to === 'approved') {
+                $current->course->increment('students_count');
+            } elseif ($oldStatus === 'approved' && $to !== 'approved') {
+                Course::where('id', $current->course_id)
+                    ->where('students_count', '>', 0)
+                    ->decrement('students_count');
+            }
 
             return $current;
         });

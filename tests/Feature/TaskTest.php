@@ -35,6 +35,7 @@ class TaskTest extends TestCase
             'title' => 'Laravel Mastery',
             'description' => 'Full backend course',
             'status' => 'published',
+            'is_public' => true,
         ]);
 
         $section = Section::create([
@@ -190,6 +191,13 @@ class TaskTest extends TestCase
     {
         Sanctum::actingAs($this->student);
 
+        UserLessonProgress::create([
+            'user_id' => $this->student->id,
+            'lesson_id' => $this->lesson->id,
+            'watched_percent' => 100,
+            'completed' => true,
+        ]);
+
         $payload = [
             'answers' => [
                 1 => 'A PHP Framework',
@@ -220,6 +228,13 @@ class TaskTest extends TestCase
     {
         Sanctum::actingAs($this->student);
 
+        UserLessonProgress::create([
+            'user_id' => $this->student->id,
+            'lesson_id' => $this->lesson->id,
+            'watched_percent' => 100,
+            'completed' => true,
+        ]);
+
         $payload = [
             'answers' => [
                 1 => 'A Database',
@@ -233,7 +248,8 @@ class TaskTest extends TestCase
             ->assertJsonPath('score', 0)
             ->assertJsonPath('passed', false)
             ->assertJsonPath('results.1.correct', false)
-            ->assertJsonPath('results.2.correct', false);
+            ->assertJsonPath('results.2.correct', false)
+            ->assertJsonMissingPath('results.1.correct_answer');
 
         $this->assertDatabaseHas('task_attempts', [
             'user_id' => $this->student->id,
@@ -246,6 +262,13 @@ class TaskTest extends TestCase
     public function test_student_cannot_retake_task_if_already_passed(): void
     {
         Sanctum::actingAs($this->student);
+
+        UserLessonProgress::create([
+            'user_id' => $this->student->id,
+            'lesson_id' => $this->lesson->id,
+            'watched_percent' => 100,
+            'completed' => true,
+        ]);
 
         TaskAttempt::create([
             'user_id' => $this->student->id,
@@ -269,6 +292,13 @@ class TaskTest extends TestCase
     public function test_student_blocked_when_max_attempts_exceeded(): void
     {
         Sanctum::actingAs($this->student);
+
+        UserLessonProgress::create([
+            'user_id' => $this->student->id,
+            'lesson_id' => $this->lesson->id,
+            'watched_percent' => 100,
+            'completed' => true,
+        ]);
 
         // Exhaust all 3 allowed attempts
         for ($i = 0; $i < 3; $i++) {
@@ -320,12 +350,22 @@ class TaskTest extends TestCase
     {
         Sanctum::actingAs($this->student);
 
-        $section = Section::first();
+        $customCourse = Course::create([
+            'title' => 'Custom Course',
+            'description' => 'Test',
+            'status' => 'published',
+            'is_public' => true,
+        ]);
+        $customSection = Section::create([
+            'course_id' => $customCourse->id,
+            'title' => 'Custom Section',
+            'order' => 1,
+        ]);
         $customLesson = Lesson::create([
-            'section_id' => $section->id,
+            'section_id' => $customSection->id,
             'title' => 'Custom Lesson',
             'duration' => 300,
-            'order' => 4,
+            'order' => 1,
         ]);
 
         UserLessonProgress::create([
@@ -358,5 +398,31 @@ class TaskTest extends TestCase
         $postResponse->assertOk()
             ->assertJsonPath('score', 100)
             ->assertJsonPath('passed', true);
+    }
+
+    public function test_student_blocked_by_cooldown_after_failed_attempt(): void
+    {
+        Sanctum::actingAs($this->student);
+
+        UserLessonProgress::create([
+            'user_id' => $this->student->id,
+            'lesson_id' => $this->lesson->id,
+            'watched_percent' => 100,
+            'completed' => true,
+        ]);
+
+        // First failed attempt
+        $res1 = $this->postJson("/api/lessons/{$this->lesson->id}/task", [
+            'answers' => [1 => 'Wrong Answer'],
+        ]);
+        $res1->assertOk()
+            ->assertJsonPath('passed', false);
+
+        // Immediate second attempt should hit cooldown
+        $res2 = $this->postJson("/api/lessons/{$this->lesson->id}/task", [
+            'answers' => [1 => 'A PHP Framework'],
+        ]);
+        $res2->assertStatus(429)
+            ->assertJsonStructure(['message', 'cooldown_remaining_minutes']);
     }
 }

@@ -14,3 +14,13 @@
 - D2, D4, D5: accepted, implemented in migration `2026_10_31_120000_harden_users_table`.
 - D1: bigint kept. Update `ai_rules.md` to match.
 - D3, D6, D7: not part of the auth task.
+
+---
+
+## Video Assets Decisions
+
+| ID | Decision | Why | Rejected Alternative |
+| :--- | :--- | :--- | :--- |
+| **D8** | Normalized `video_assets` table instead of `recording_url` column on `zoom_meetings` | Allows multiple recordings per meeting, supports multiple video providers, tracks duration, and enables standalone video lessons. | Adding `recording_url` string column directly to `zoom_meetings`. |
+| **D9** | Server-side Sanitization to Provider ID | Prevents raw iframe injection attacks, strips tracking parameters, and guarantees frontend player compatibility. | Storing raw URLs and parsing them on the client. |
+| **D10** | OAuth Refresh Token Encryption at Rest & Dynamic CSRF State Validation | Prevents credential leaks in database backups via AES-256-GCM encryption (`Crypt::encryptString`) and stops OAuth Login CSRF using single-use 15-minute high-entropy state tokens. Disconnection executes upstream revocation on Google servers. | Plaintext token storage; static `state` strings; simple local deletion on disconnect. |

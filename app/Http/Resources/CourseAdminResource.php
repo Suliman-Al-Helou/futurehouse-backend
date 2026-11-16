@@ -27,12 +27,13 @@ class CourseAdminResource extends JsonResource
             'target_audience' => $this->target_audience ?? [],
             'what_you_learn' => $this->what_you_learn ?? [],
 
-            'students_count' => $this->approved_count ?? 0,
+            'students_count' => $this->approved_count ?? $this->students_count ?? 0,
             'enrollments_count' => $this->enrollments_count ?? 0,
             'rating' => $this->rating,
             'is_popular' => $this->is_popular,
             'price' => $this->price,
             'is_public' => $this->is_public,
+            'youtube_playlist_id' => $this->youtube_playlist_id,
             'instructor' => $this->whenLoaded('instructor', fn () => $this->instructor
                 ? ['id' => $this->instructor->id, 'name' => $this->instructor->name]
                 : null),
