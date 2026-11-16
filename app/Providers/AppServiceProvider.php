@@ -49,7 +49,10 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('forgot-password', fn (Request $r) => Limit::perMinute(3)->by(Str::lower((string) $r->input('email')).'|'.$r->ip()));
 
         // 5. حماية التصفح العام للكورسات (60 بالدقيقة لكل IP)
-        RateLimiter::for('courses-public', fn (Request $r) => Limit::perMinute(60)->by($r->ip()));
+        // In load-test mode, raise to 10000/min so we measure DB/app perf, not the limiter
+        // (Rate-limiting correctness was already proven in Phase 3)
+        $publicCourseLimit = config('app.load_test_mode') ? 10000 : 60;
+        RateLimiter::for('courses-public', fn (Request $r) => Limit::perMinute($publicCourseLimit)->by($r->ip()));
 
         // 6. حماية لوحة تحكم الكورسات والأقسام للأدمن (60 بالدقيقة لكل مستخدم)
         RateLimiter::for('courses-admin', fn (Request $r) => Limit::perMinute(60)->by($r->user()?->id ?: $r->ip()));
@@ -64,7 +67,8 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('task-submit', fn (Request $r) => Limit::perMinute(20)->by($r->user()?->id ?: $r->ip()));
 
         // 10. حماية تسجيل الحضور في اللقاءات المباشرة (10 بالدقيقة لكل مستخدم)
-        RateLimiter::for('attendance-submit', fn (Request $r) => Limit::perMinute(10)->by($r->user()?->id ?: $r->ip()));
+        $attendanceLimit = config('app.load_test_mode') ? 10000 : 10;
+        RateLimiter::for('attendance-submit', fn (Request $r) => Limit::perMinute($attendanceLimit)->by($r->user()?->id ?: $r->ip()));
         DB::listen(function ($query) {
             if ($query->time > 50) {
                 Log::info("SLOW QUERY ({$query->time}ms): {$query->sql}");
