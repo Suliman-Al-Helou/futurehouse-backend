@@ -71,7 +71,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/zoom-meetings', [ZoomMeetingController::class, 'index']);
     Route::get('/zoom-meetings/attendance-summary', [ZoomMeetingController::class, 'attendanceSummary']);
     Route::get('/zoom-meetings/attendance', [ZoomMeetingController::class, 'attendanceRecord']);
-    Route::post('/zoom-meetings/{zoomMeeting}/attend', [ZoomMeetingController::class, 'attend']);
+    Route::post('/zoom-meetings/{zoomMeeting}/attend', [ZoomMeetingController::class, 'attend'])
+        ->middleware('throttle:attendance-submit');
 });
 
 // ─── Admin ────────────────────────────────────────────────

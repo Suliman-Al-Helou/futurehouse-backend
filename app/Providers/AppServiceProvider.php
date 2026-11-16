@@ -43,18 +43,10 @@ class AppServiceProvider extends ServiceProvider
         );
 
         // 3. حماية عملية تغيير الباسورد الفعلي
-        RateLimiter::for('reset-password', function (Request $r) {
-            $email = is_string($r->input('email')) ? Str::lower($r->input('email')).'.'.$r->ip() : '';
-
-            return Limit::perMinute(5)->by($email.$r->ip());
-        });
+        RateLimiter::for('reset-password', fn (Request $r) => Limit::perMinute(5)->by(Str::lower((string) $r->input('email')).'|'.$r->ip()));
 
         // 4. حماية مسار طلب رابط الاستعادة لمنع إغراق السيرفر
-        RateLimiter::for('forgot-password', function (Request $r) {
-            $email = is_string($r->input('email')) ? Str::lower($r->input('email')).'.'.$r->ip() : '';
-
-            return Limit::perMinute(3)->by($email.$r->ip());
-        });
+        RateLimiter::for('forgot-password', fn (Request $r) => Limit::perMinute(3)->by(Str::lower((string) $r->input('email')).'|'.$r->ip()));
 
         // 5. حماية التصفح العام للكورسات (60 بالدقيقة لكل IP)
         RateLimiter::for('courses-public', fn (Request $r) => Limit::perMinute(60)->by($r->ip()));
@@ -70,6 +62,9 @@ class AppServiceProvider extends ServiceProvider
 
         // 9. حماية تسليم مهام الدروس (20 بالدقيقة لكل مستخدم)
         RateLimiter::for('task-submit', fn (Request $r) => Limit::perMinute(20)->by($r->user()?->id ?: $r->ip()));
+
+        // 10. حماية تسجيل الحضور في اللقاءات المباشرة (10 بالدقيقة لكل مستخدم)
+        RateLimiter::for('attendance-submit', fn (Request $r) => Limit::perMinute(10)->by($r->user()?->id ?: $r->ip()));
         DB::listen(function ($query) {
             if ($query->time > 50) {
                 Log::info("SLOW QUERY ({$query->time}ms): {$query->sql}");
