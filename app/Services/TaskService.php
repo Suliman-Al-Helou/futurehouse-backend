@@ -8,6 +8,8 @@ namespace App\Services;
 
 use App\Models\Lesson;
 use App\Models\Task;
+use App\Models\TaskAttempt;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 
@@ -33,5 +35,151 @@ final class TaskService
 
         // 5. إرجاع المهمة التي تم إنشاؤها بنجاح
         return $task;
+    }
+
+    /**
+     * Handles student task attempt submission under an isolated lock.
+     *
+     * @param  array<string|int, mixed>  $userAnswers
+     * @return array{status: int, data: array<string, mixed>}
+     */
+    public function submitAttempt(Task $task, User $user, array $userAnswers): array
+    {
+        $maxAttempts = $task->max_attempts ?? 3;
+
+        return DB::transaction(function () use ($task, $user, $userAnswers, $maxAttempts): array {
+            // تحقق من عدد المحاولات مع قفل لمنع التزامن
+            $attempts = TaskAttempt::where('user_id', $user->id)
+                ->where('task_id', $task->id)
+                ->lockForUpdate()
+                ->get();
+
+            $attemptsUsed = $attempts->count();
+
+            if ($attemptsUsed >= $maxAttempts) {
+                return [
+                    'status' => 429,
+                    'data' => [
+                        'message' => 'استنفذت عدد المحاولات المسموح بها',
+                    ],
+                ];
+            }
+
+            // هل نجح سابقاً؟
+            if ($attempts->contains('passed', true)) {
+                return [
+                    'status' => 200,
+                    'data' => [
+                        'message' => 'نجحت في هذه المهمة مسبقاً',
+                        'passed' => true,
+                    ],
+                ];
+            }
+
+            // تحقق من فترة الانتظار بين المحاولات الفاشلة
+            $cooldownMinutes = (int) ($task->cooldown_minutes ?? 0);
+            if ($cooldownMinutes > 0) {
+                $latestAttempt = TaskAttempt::where('user_id', $user->id)
+                    ->where('task_id', $task->id)
+                    ->latest('id')
+                    ->first();
+
+                if ($latestAttempt && ! $latestAttempt->passed) {
+                    $attemptTime = $latestAttempt->attempted_at ?? $latestAttempt->created_at;
+                    $diff = $attemptTime ? (int) $attemptTime->diffInMinutes(now()) : 999;
+                    if ($diff < $cooldownMinutes) {
+                        $remainingCooldown = $cooldownMinutes - $diff;
+
+                        return [
+                            'status' => 429,
+                            'data' => [
+                                'message' => "يجب الانتظار {$remainingCooldown} دقيقة قبل المحاولة التالية",
+                                'cooldown_remaining_minutes' => $remainingCooldown,
+                            ],
+                        ];
+                    }
+                }
+            }
+
+            // تصحيح الإجابات
+            $questions = collect($task->questions ?? []);
+            $results = [];
+            $correctCount = 0;
+            $gradableCount = 0;
+
+            foreach ($questions as $index => $q) {
+                $qId = $q['id'] ?? $index + 1;
+                $type = $q['type'] ?? 'mcq';
+                $userAns = $userAnswers[$qId] ?? $userAnswers[(string) $qId] ?? null;
+
+                if ($type === 'open') {
+                    $results[$qId] = [
+                        'type' => 'open',
+                        'answer' => $userAns,
+                        'pending' => true,
+                    ];
+
+                    continue;
+                }
+
+                $gradableCount++;
+                $correct = (string) ($q['correct_answer'] ?? '');
+                $isCorrect = is_scalar($userAns)
+                    && strtolower(trim((string) $userAns)) === strtolower(trim($correct));
+
+                if ($isCorrect) {
+                    $correctCount++;
+                }
+
+                $results[$qId] = [
+                    'correct' => $isCorrect,
+                    'your_answer' => $userAns,
+                    'correct_answer' => $correct,
+                    'explanation' => $q['explanation'] ?? null,
+                ];
+            }
+
+            $score = $gradableCount > 0 ? (int) round(($correctCount / $gradableCount) * 100) : 0;
+            $passed = $score >= ($task->pass_percentage ?? 70);
+
+            // حفظ المحاولة
+            TaskAttempt::create([
+                'user_id' => $user->id,
+                'task_id' => $task->id,
+                'answers' => $userAnswers,
+                'score' => $score,
+                'passed' => $passed,
+                'attempted_at' => now(),
+            ]);
+
+            $newAttemptsUsed = $attemptsUsed + 1;
+            $attemptsRemaining = max(0, $maxAttempts - $newAttemptsUsed);
+            $revealAnswers = $passed || ($newAttemptsUsed >= $maxAttempts);
+
+            if (! $revealAnswers) {
+                foreach ($results as $qId => $res) {
+                    if (isset($res['type'])) {
+                        continue;
+                    }
+                    unset($results[$qId]['correct_answer'], $results[$qId]['explanation']);
+                }
+            }
+
+            return [
+                'status' => 200,
+                'data' => [
+                    'score' => $score,
+                    'passed' => $passed,
+                    'pass_score' => $task->pass_percentage ?? 70,
+                    'reveal_answers' => $revealAnswers,
+                    'attempts_used' => $newAttemptsUsed,
+                    'attempts_remaining' => $attemptsRemaining,
+                    'results' => $results,
+                    'message' => $passed
+                        ? '✅ أحسنت! يمكنك الانتقال للدرس التالي'
+                        : "❌ لم تنجح. درجتك {$score}% والمطلوب ".($task->pass_percentage ?? 70).'%. متبقي لك '.$attemptsRemaining.' محاولات.',
+                ],
+            ];
+        });
     }
 }

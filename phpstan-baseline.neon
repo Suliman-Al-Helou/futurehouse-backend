@@ -132,11 +132,6 @@ parameters:
 			count: 2
 			path: app/Http/Controllers/Api/TaskController.php
 
-		-
-			message: '#^Strict comparison using \=\=\= between ''open'' and ''open'' will always evaluate to true\.$#'
-			identifier: identical.alwaysTrue
-			count: 1
-			path: app/Http/Controllers/Api/TaskController.php
 
 		-
 			message: '#^Using nullsafe property access "\?\-\>watched_percent" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
