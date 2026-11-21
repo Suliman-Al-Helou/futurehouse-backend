@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
@@ -9,8 +11,17 @@ class InstructorResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        $isAdmin = (bool) $request->user()?->isAdmin();
+
         return [
             'id' => $this->id,
+            'user_id' => $this->when($isAdmin, $this->user_id),
+            'is_display_only' => $this->when($isAdmin, is_null($this->user_id)),
+            'user' => $this->when($isAdmin, fn () => $this->relationLoaded('user') && $this->user ? [
+                'id' => $this->user->id,
+                'name' => $this->user->name,
+                'email' => $this->user->email,
+            ] : null),
             'name' => $this->name,
             'title' => $this->title,
             'bio' => $this->bio,

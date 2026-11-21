@@ -6,6 +6,7 @@ use App\Models\Concerns\ClearsCacheOnChange;
 use App\Support\ContentCache;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Instructor extends Model
 {
@@ -17,6 +18,7 @@ class Instructor extends Model
     }
 
     protected $fillable = [
+        'user_id',
         'name',
         'title',
         'bio',
@@ -47,6 +49,18 @@ class Instructor extends Model
         return $query->with(['courses' => fn ($q) => $q->withCount([
             'enrollments as approved_count' => fn ($e) => $e->where('status', 'approved'),
         ])]);
+    }
+
+    /** The user login account associated with this instructor profile. */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    /** Whether this instructor profile is for display/marketing only without a user account. */
+    public function isDisplayOnly(): bool
+    {
+        return is_null($this->user_id);
     }
 
     // العلاقة مع الكورسات عبر instructor_id
