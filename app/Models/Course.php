@@ -7,6 +7,7 @@ use App\Support\ContentCache;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Course extends Model
@@ -106,7 +107,10 @@ class Course extends Model
         return $this->relationLoaded('instructor') ? $this->instructor?->name : null;
     }
 
-    public function sections()
+    /**
+     * @return HasMany<Section, $this>
+     */
+    public function sections(): HasMany
     {
         return $this->hasMany(Section::class)->orderBy('order');
     }
@@ -121,7 +125,10 @@ class Course extends Model
         return $this->hasMany(Enrollment::class);
     }
 
-    public function instructor()
+    /**
+     * @return BelongsTo<Instructor, $this>
+     */
+    public function instructor(): BelongsTo
     {
         return $this->belongsTo(Instructor::class);
     }

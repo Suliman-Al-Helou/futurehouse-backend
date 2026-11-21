@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\Course;
 use App\Models\Enrollment;
+use App\Models\Instructor;
 use App\Models\Lesson;
 use App\Models\TaskAttempt;
 use App\Models\User;
@@ -11,6 +12,7 @@ use App\Models\UserLessonProgress;
 use App\Models\ZoomAttendance;
 use App\Policies\CoursePolicy;
 use App\Policies\EnrollmentPolicy;
+use App\Policies\InstructorPolicy;
 use App\Policies\LessonPolicy;
 use App\Policies\TaskAttemptPolicy;
 use App\Policies\UserLessonProgressPolicy;
@@ -69,6 +71,9 @@ class AppServiceProvider extends ServiceProvider
         // 10. حماية تسجيل الحضور في اللقاءات المباشرة (10 بالدقيقة لكل مستخدم)
         $attendanceLimit = config('app.load_test_mode') ? 10000 : 10;
         RateLimiter::for('attendance-submit', fn (Request $r) => Limit::perMinute($attendanceLimit)->by($r->user()?->id ?: $r->ip()));
+        // 11. حماية بوابة المدرب ومسارات البروفايل (60 بالدقيقة لكل مستخدم)
+        RateLimiter::for('instructor-portal', fn (Request $r) => Limit::perMinute(60)->by($r->user()?->id ?: $r->ip()));
+
         DB::listen(function ($query) {
             if ($query->time > 50) {
                 Log::info("SLOW QUERY ({$query->time}ms): {$query->sql}");
@@ -87,6 +92,7 @@ class AppServiceProvider extends ServiceProvider
         });
 
         Gate::policy(User::class, UserPolicy::class);
+        Gate::policy(Instructor::class, InstructorPolicy::class);
         Gate::policy(Course::class, CoursePolicy::class);
         Gate::policy(Lesson::class, LessonPolicy::class);
         Gate::policy(Enrollment::class, EnrollmentPolicy::class);
