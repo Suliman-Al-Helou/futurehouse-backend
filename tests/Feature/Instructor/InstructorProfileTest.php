@@ -16,6 +16,7 @@ class InstructorProfileTest extends TestCase
     use RefreshDatabase;
 
     private User $instructorUser;
+
     private Instructor $instructorProfile;
 
     protected function setUp(): void
