@@ -39,6 +39,7 @@ class User extends Authenticatable
         static::deleting(function (User $user) {
             if (! $user->isForceDeleting()) {
                 Instructor::where('user_id', $user->id)->update(['user_id' => null]);
+                CourseActivityLog::where('user_id', $user->id)->update(['user_id' => null]);
             }
             ContentCache::forgetInstructors();
         });
@@ -120,6 +121,8 @@ class User extends Authenticatable
 
     /**
      * The instructor profile linked to this user account (1 user -> 1 instructor profile).
+     *
+     * @return HasOne<Instructor, $this>
      */
     public function instructor(): HasOne
     {

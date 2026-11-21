@@ -7,6 +7,7 @@ use App\Support\ContentCache;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Course extends Model
@@ -121,7 +122,10 @@ class Course extends Model
         return $this->hasMany(Enrollment::class);
     }
 
-    public function instructor()
+    /**
+     * @return BelongsTo<Instructor, $this>
+     */
+    public function instructor(): BelongsTo
     {
         return $this->belongsTo(Instructor::class);
     }
@@ -139,6 +143,11 @@ class Course extends Model
     public function zoomMeetings()
     {
         return $this->hasMany(ZoomMeeting::class);
+    }
+
+    public function activityLogs(): HasMany
+    {
+        return $this->hasMany(CourseActivityLog::class);
     }
 
     public function orderedLessons()

@@ -1,12 +1,6 @@
 parameters:
 	ignoreErrors:
 		-
-			message: '#^Relation ''instructor'' is not found in App\\Models\\Course model\.$#'
-			identifier: larastan.relationExistence
-			count: 3
-			path: app/Http/Controllers/Api/Admin/AdminCourseController.php
-
-		-
 			message: '#^If condition is always true\.$#'
 			identifier: if.alwaysTrue
 			count: 1
@@ -359,6 +353,24 @@ parameters:
 			identifier: property.notFound
 			count: 1
 			path: app/Http/Resources/CourseDetailResource.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CourseInstructorProfileResource.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CourseInstructorProfileResource.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Resources/CourseInstructorProfileResource.php
 
 		-
 			message: '#^Access to an undefined property App\\Http\\Resources\\CourseResource\:\:\$cover_image\.$#'
@@ -823,19 +835,7 @@ parameters:
 			path: app/Jobs/UploadVideoToYouTubeJob.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\Course\:\:\$instructor\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Models/Course.php
-
-		-
 			message: '#^Relation ''enrollments'' is not found in App\\Models\\Course model\.$#'
-			identifier: larastan.relationExistence
-			count: 1
-			path: app/Models/Course.php
-
-		-
-			message: '#^Relation ''instructor'' is not found in App\\Models\\Course model\.$#'
 			identifier: larastan.relationExistence
 			count: 1
 			path: app/Models/Course.php

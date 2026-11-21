@@ -88,6 +88,7 @@ Route::middleware(['auth:sanctum', 'role:instructor|admin', 'throttle:instructor
         // Courses
         Route::get('/courses', [InstructorCourseController::class, 'index']);
         Route::get('/courses/{course}', [InstructorCourseController::class, 'show']);
+        Route::put('/courses/{course}', [InstructorCourseController::class, 'update']);
     });
 
 // ─── Admin ────────────────────────────────────────────────
