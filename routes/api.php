@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\Auth\PasswordResetController;
 use App\Http\Controllers\Api\CourseController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\EnrollmentController;
+use App\Http\Controllers\Api\Instructor\InstructorProfileController;
 use App\Http\Controllers\Api\LessonController;
 use App\Http\Controllers\Api\ProgressController;
 use App\Http\Controllers\Api\TaskController;
@@ -74,6 +75,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/zoom-meetings/{zoomMeeting}/attend', [ZoomMeetingController::class, 'attend'])
         ->middleware('throttle:attendance-submit');
 });
+
+// ─── Instructor Workspace ─────────────────────────────────
+Route::middleware(['auth:sanctum', 'role:instructor|admin'])
+    ->prefix('instructor')
+    ->group(function () {
+        // Self-Service Profile (Zero-IDOR)
+        Route::get('/profile', [InstructorProfileController::class, 'show']);
+        Route::put('/profile', [InstructorProfileController::class, 'update']);
+    });
 
 // ─── Admin ────────────────────────────────────────────────
 Route::middleware(['auth:sanctum', 'can:manageAdmin,App\Models\User'])->prefix('admin')->group(function () {

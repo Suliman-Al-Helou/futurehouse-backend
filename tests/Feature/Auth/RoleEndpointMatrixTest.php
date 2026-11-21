@@ -117,6 +117,10 @@ class RoleEndpointMatrixTest extends TestCase
             'GET api/admin/youtube/auth-url' => ['GET', 'api/admin/youtube/auth-url', 401, 403, true],
             'POST api/admin/youtube/callback' => ['POST', 'api/admin/youtube/callback', 401, 403, true],
             'POST api/admin/youtube/disconnect' => ['POST', 'api/admin/youtube/disconnect', 401, 403, true],
+
+            // ─── Instructor Endpoints ─────────────────────────────────────
+            'GET api/instructor/profile' => ['GET', 'api/instructor/profile', 401, 403, true],
+            'PUT api/instructor/profile' => ['PUT', 'api/instructor/profile', 401, 403, true],
         ];
     }
 

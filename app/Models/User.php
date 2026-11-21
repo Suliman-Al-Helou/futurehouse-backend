@@ -17,7 +17,12 @@ use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, HasRoles, Notifiable, SoftDeletes;
+    use HasApiTokens, HasFactory;
+    use HasRoles {
+        assignRole as traitAssignRole;
+        syncRoles as traitSyncRoles;
+    }
+    use Notifiable, SoftDeletes;
 
     protected $fillable = ['name', 'email', 'password',   'google_id'];
 
@@ -89,6 +94,36 @@ class User extends Authenticatable
     public function isInstructor(): bool
     {
         return $this->hasRole('instructor');
+    }
+
+    public function assignRole(...$roles): static
+    {
+        $this->traitAssignRole(...$roles);
+
+        if ($this->exists && $this->hasRole('instructor') && ! $this->instructor()->exists()) {
+            Instructor::firstOrCreate(
+                ['user_id' => $this->id],
+                ['name' => $this->name]
+            );
+            ContentCache::forgetInstructors();
+        }
+
+        return $this;
+    }
+
+    public function syncRoles(...$roles): static
+    {
+        $this->traitSyncRoles(...$roles);
+
+        if ($this->exists && $this->hasRole('instructor') && ! $this->instructor()->exists()) {
+            Instructor::firstOrCreate(
+                ['user_id' => $this->id],
+                ['name' => $this->name]
+            );
+            ContentCache::forgetInstructors();
+        }
+
+        return $this;
     }
 
     /**

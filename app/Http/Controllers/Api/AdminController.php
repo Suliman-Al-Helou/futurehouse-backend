@@ -99,6 +99,14 @@ class AdminController extends Controller
         $role = Role::findOrCreate($validated['role'], 'web');
         $user->syncRoles([$role]);
 
+        if ($validated['role'] === 'instructor') {
+            Instructor::firstOrCreate(
+                ['user_id' => $user->id],
+                ['name' => $user->name]
+            );
+            ContentCache::forgetInstructors();
+        }
+
         return new UserAdminResource($user->loadMissing('roles')->loadCount('enrollments'));
     }
 
