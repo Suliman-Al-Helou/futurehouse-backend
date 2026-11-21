@@ -8,6 +8,7 @@ enum UserRole: string
 {
     case ADMIN = 'admin';
     case STUDENT = 'student';
+    case INSTRUCTOR = 'instructor';
 
     /**
      * Determine if the role represents administrative privileges.
@@ -23,5 +24,13 @@ enum UserRole: string
     public function isStudent(): bool
     {
         return $this === self::STUDENT;
+    }
+
+    /**
+     * Determine if the role represents an instructor.
+     */
+    public function isInstructor(): bool
+    {
+        return $this === self::INSTRUCTOR;
     }
 }

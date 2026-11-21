@@ -1,0 +1,11 @@
+{
+    "probe": "P-18",
+    "decision_row": "D-18",
+    "note": "Admin endpoint exposes user_id and user object",
+    "observed": {
+        "status": 200,
+        "has_user_id": true,
+        "has_user_object": true,
+        "user_id_value": 12
+    }
+}

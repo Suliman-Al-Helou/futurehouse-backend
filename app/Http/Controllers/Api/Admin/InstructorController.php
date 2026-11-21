@@ -21,9 +21,19 @@ class InstructorController extends Controller
         private readonly InstructorService $instructorService,
     ) {}
 
-    /** Lists instructors with course counts, cached for 24 hours. */
+    /** Lists instructors with course counts, cached for 24 hours for public visitors. */
     public function index(): JsonResponse
     {
+        $isAdmin = (bool) request()->user()?->isAdmin();
+
+        if ($isAdmin) {
+            $instructors = InstructorResource::collection(
+                Instructor::with('user')->withCount('courses')->get()
+            );
+
+            return response()->json(['data' => $instructors]);
+        }
+
         $instructors = Cache::remember('instructors:all', 86400, function () {
             return InstructorResource::collection(Instructor::withCount('courses')->get())->resolve();
         });
@@ -34,7 +44,7 @@ class InstructorController extends Controller
     /** Instructor profile with course summaries. */
     public function show(int $id): JsonResponse
     {
-        $instructor = Instructor::withCourseStats()->findOrFail($id);
+        $instructor = Instructor::with('user')->withCourseStats()->findOrFail($id);
 
         return response()->json(new InstructorDetailResource($instructor));
     }

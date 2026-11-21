@@ -43,12 +43,6 @@ parameters:
 			path: app/Http/Controllers/Api/Admin/EnrollmentController.php
 
 		-
-			message: '#^Relation ''courses'' is not found in App\\Models\\Instructor model\.$#'
-			identifier: larastan.relationExistence
-			count: 1
-			path: app/Http/Controllers/Api/Admin/InstructorController.php
-
-		-
 			message: '#^Access to an undefined property App\\Models\\Course\:\:\$sections\.$#'
 			identifier: property.notFound
 			count: 1
@@ -131,7 +125,6 @@ parameters:
 			identifier: larastan.relationExistence
 			count: 2
 			path: app/Http/Controllers/Api/TaskController.php
-
 
 		-
 			message: '#^Using nullsafe property access "\?\-\>watched_percent" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
@@ -524,84 +517,6 @@ parameters:
 			path: app/Http/Resources/FaqResource.php
 
 		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\InstructorResource\:\:\$avatar_url\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/InstructorResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\InstructorResource\:\:\$bio\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/InstructorResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\InstructorResource\:\:\$cover_url\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/InstructorResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\InstructorResource\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/InstructorResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\InstructorResource\:\:\$linkedin\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/InstructorResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\InstructorResource\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/InstructorResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\InstructorResource\:\:\$rating\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/InstructorResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\InstructorResource\:\:\$students_count\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/InstructorResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\InstructorResource\:\:\$title\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/InstructorResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\InstructorResource\:\:\$total_reviews\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/InstructorResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\InstructorResource\:\:\$twitter\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/InstructorResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\InstructorResource\:\:\$years_experience\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/InstructorResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\InstructorResource\:\:\$youtube\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/InstructorResource.php
-
-		-
 			message: '#^Access to an undefined property App\\Http\\Resources\\LessonResource\:\:\$description\.$#'
 			identifier: property.notFound
 			count: 1
@@ -990,12 +905,6 @@ parameters:
 			identifier: larastan.relationExistence
 			count: 1
 			path: app/Services/EnrollmentService.php
-
-		-
-			message: '#^Relation ''courses'' is not found in App\\Models\\Instructor model\.$#'
-			identifier: larastan.relationExistence
-			count: 2
-			path: app/Services/InstructorService.php
 
 		-
 			message: '#^Called ''env'' outside of the config directory which returns null when the config is cached, use ''config''\.$#'

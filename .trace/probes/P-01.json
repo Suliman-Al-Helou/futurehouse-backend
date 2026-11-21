@@ -1,0 +1,9 @@
+{
+    "probe": "P-01",
+    "decision_row": "D-01",
+    "note": "Unauthenticated request rejection",
+    "observed": {
+        "status": 401,
+        "message": "غير مصرح لك بالوصول، يرجى تسجيل الدخول أولاً"
+    }
+}

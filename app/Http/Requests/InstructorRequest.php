@@ -2,8 +2,10 @@
 
 namespace App\Http\Requests;
 
+use App\Models\User;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class InstructorRequest extends FormRequest
 {
@@ -23,6 +25,21 @@ class InstructorRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'user_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('users', 'id')->whereNull('deleted_at'),
+                Rule::unique('instructors', 'user_id'),
+                function (string $attribute, mixed $value, \Closure $fail): void {
+                    if (! $value || ! is_numeric($value)) {
+                        return;
+                    }
+                    $user = User::find($value);
+                    if ($user && $user->isAdmin()) {
+                        $fail('لا يمكن ربط حساب مسؤول بدور مدرب.');
+                    }
+                },
+            ],
             'name' => 'required|string|max:255',
             'title' => 'nullable|string|max:255',
             'bio' => 'nullable|string',
