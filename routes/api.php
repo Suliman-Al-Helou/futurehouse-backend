@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\Auth\PasswordResetController;
 use App\Http\Controllers\Api\CourseController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\EnrollmentController;
+use App\Http\Controllers\Api\Instructor\InstructorCourseController;
 use App\Http\Controllers\Api\Instructor\InstructorProfileController;
 use App\Http\Controllers\Api\LessonController;
 use App\Http\Controllers\Api\ProgressController;
@@ -83,6 +84,10 @@ Route::middleware(['auth:sanctum', 'role:instructor|admin', 'throttle:instructor
         // Self-Service Profile (Zero-IDOR)
         Route::get('/profile', [InstructorProfileController::class, 'show']);
         Route::put('/profile', [InstructorProfileController::class, 'update']);
+
+        // Courses
+        Route::get('/courses', [InstructorCourseController::class, 'index']);
+        Route::get('/courses/{course}', [InstructorCourseController::class, 'show']);
     });
 
 // ─── Admin ────────────────────────────────────────────────

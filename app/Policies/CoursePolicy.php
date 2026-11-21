@@ -9,6 +9,23 @@ use App\Models\User;
 class CoursePolicy
 {
     /**
+     * Determine whether the user can manage the course as an instructor or supervising admin.
+     */
+    public function manageAsInstructor(User $user, Course $course): bool
+    {
+        if ($user->isAdmin()) {
+            return true;
+        }
+
+        if (! $user->hasRole('instructor')) {
+            return false;
+        }
+
+        return $course->instructor_id !== null
+            && $course->instructor_id === $user->instructor?->id;
+    }
+
+    /**
      * هل يقدر هاد المستخدم يشاهد محتوى الكورس المحمي (دروس، فيديوهات، تقدّم)؟
      * ⚠️ هاي مش نفسها صفحة "تفاصيل الكورس" العامة (عنوان، وصف، منهج) —
      * هاي مفتوحة للكل أصلًا عبر CourseController@show العام، ومش من شغل

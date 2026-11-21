@@ -121,6 +121,8 @@ class RoleEndpointMatrixTest extends TestCase
             // ─── Instructor Endpoints ─────────────────────────────────────
             'GET api/instructor/profile' => ['GET', 'api/instructor/profile', 401, 403, true],
             'PUT api/instructor/profile' => ['PUT', 'api/instructor/profile', 401, 403, true],
+            'GET api/instructor/courses' => ['GET', 'api/instructor/courses', 401, 403, true],
+            'GET api/instructor/courses/{course}' => ['GET', 'api/instructor/courses/{course}', 401, 403, true],
         ];
     }
 
