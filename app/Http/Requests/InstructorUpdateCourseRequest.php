@@ -26,13 +26,13 @@ class InstructorUpdateCourseRequest extends FormRequest
     {
         $rules = [
             'title' => ['sometimes', 'string', 'min:3', 'max:255'],
-            'description' => ['sometimes', 'string', 'min:10'],
+            'description' => ['sometimes', 'string', 'min:10', 'max:5000'],
             'level' => ['sometimes', 'in:beginner,intermediate,advanced'],
-            'what_you_learn' => ['sometimes', 'nullable', 'array'],
+            'what_you_learn' => ['sometimes', 'nullable', 'array', 'max:30'],
             'what_you_learn.*' => ['string', 'max:255'],
-            'requirements' => ['sometimes', 'nullable', 'array'],
+            'requirements' => ['sometimes', 'nullable', 'array', 'max:30'],
             'requirements.*' => ['string', 'max:255'],
-            'target_audience' => ['sometimes', 'nullable', 'array'],
+            'target_audience' => ['sometimes', 'nullable', 'array', 'max:30'],
             'target_audience.*' => ['string', 'max:255'],
         ];
 

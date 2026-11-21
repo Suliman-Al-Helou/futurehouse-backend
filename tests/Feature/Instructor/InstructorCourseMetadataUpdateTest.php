@@ -288,5 +288,56 @@ class InstructorCourseMetadataUpdateTest extends TestCase
             '_method' => 'PUT',
             'cover_image' => $file,
         ])->assertStatus(422)->assertJsonValidationErrors(['cover_image']);
+
+        // Image file exceeding 2MB
+        $largeFile = UploadedFile::fake()->image('oversized.jpg')->size(3000);
+        $this->postJson("/api/instructor/courses/{$this->courseA1->id}", [
+            '_method' => 'PUT',
+            'cover_image' => $largeFile,
+        ])->assertStatus(422)->assertJsonValidationErrors(['cover_image']);
+
+        // Unbounded array items (> 30)
+        $excessiveArray = array_fill(0, 31, 'مخرج تعليمي اختباري');
+        $this->putJson("/api/instructor/courses/{$this->courseA1->id}", [
+            'what_you_learn' => $excessiveArray,
+        ])->assertStatus(422)->assertJsonValidationErrors(['what_you_learn']);
+
+        // Description exceeding 5000 chars
+        $this->putJson("/api/instructor/courses/{$this->courseA1->id}", [
+            'description' => str_repeat('أ', 5001),
+        ])->assertStatus(422)->assertJsonValidationErrors(['description']);
+    }
+
+    public function test_old_cover_image_file_is_pruned_when_new_image_is_uploaded(): void
+    {
+        Storage::fake('public');
+        Sanctum::actingAs($this->instructorA);
+
+        // Upload first image
+        $firstFile = UploadedFile::fake()->image('first_cover.jpg', 600, 400);
+        $this->postJson("/api/instructor/courses/{$this->courseA1->id}", [
+            '_method' => 'PUT',
+            'cover_image' => $firstFile,
+        ])->assertStatus(200);
+
+        $firstStoredUrl = $this->courseA1->fresh()->cover_image;
+        $firstStoredPath = str_replace('/storage/', '', parse_url($firstStoredUrl, PHP_URL_PATH) ?? $firstStoredUrl);
+        Storage::disk('public')->assertExists($firstStoredPath);
+
+        // Upload second image replacing the first
+        $secondFile = UploadedFile::fake()->image('second_cover.png', 800, 600);
+        $this->postJson("/api/instructor/courses/{$this->courseA1->id}", [
+            '_method' => 'PUT',
+            'cover_image' => $secondFile,
+        ])->assertStatus(200);
+
+        $secondStoredUrl = $this->courseA1->fresh()->cover_image;
+        $secondStoredPath = str_replace('/storage/', '', parse_url($secondStoredUrl, PHP_URL_PATH) ?? $secondStoredUrl);
+
+        // Second image exists
+        Storage::disk('public')->assertExists($secondStoredPath);
+
+        // First image was pruned from disk
+        Storage::disk('public')->assertMissing($firstStoredPath);
     }
 }
