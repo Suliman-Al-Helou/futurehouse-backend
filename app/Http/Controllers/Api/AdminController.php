@@ -42,7 +42,7 @@ class AdminController extends Controller
         if ($search = trim((string) request('search', request('q', '')))) {
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
+                    ->orWhere('email', 'like', "%{$search}%");
             });
         }
 

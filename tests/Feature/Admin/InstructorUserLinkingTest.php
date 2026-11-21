@@ -8,11 +8,12 @@ use App\Models\Course;
 use App\Models\Instructor;
 use App\Models\User;
 use App\Services\InstructorService;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
 use Laravel\Sanctum\Sanctum;
-use Spatie\Permission\Exceptions\RoleDoesNotExist;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -609,12 +610,12 @@ class InstructorUserLinkingTest extends TestCase
         ]);
 
         $this->assertTrue($displayOnly->isDisplayOnly());
-        $this->assertInstanceOf(\Illuminate\Database\Eloquent\Relations\BelongsTo::class, $displayOnly->user());
+        $this->assertInstanceOf(BelongsTo::class, $displayOnly->user());
         $this->assertNull($displayOnly->user);
 
         $user = User::factory()->student()->create();
         $this->assertFalse($user->isInstructor());
-        $this->assertInstanceOf(\Illuminate\Database\Eloquent\Relations\HasOne::class, $user->instructor());
+        $this->assertInstanceOf(HasOne::class, $user->instructor());
 
         $linked = app(InstructorService::class)->create([
             'name' => 'مدرب معتمد',
