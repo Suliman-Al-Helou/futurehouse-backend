@@ -162,6 +162,7 @@ class InstructorUserLinkingTest extends TestCase
             ->assertJsonPath('user_id', null);
 
         $this->assertFalse($user->fresh()->hasRole('instructor'));
+        $this->assertTrue($user->fresh()->hasRole('student'));
     }
 
     public function test_deleting_instructor_removes_instructor_role(): void
@@ -178,6 +179,7 @@ class InstructorUserLinkingTest extends TestCase
         $response->assertNoContent();
 
         $this->assertFalse($user->fresh()->hasRole('instructor'));
+        $this->assertTrue($user->fresh()->hasRole('student'));
     }
 
     public function test_updating_instructor_without_user_id_keeps_existing_link(): void
@@ -221,7 +223,33 @@ class InstructorUserLinkingTest extends TestCase
             ->assertJsonPath('user_id', $userB->id);
 
         $this->assertFalse($userA->fresh()->hasRole('instructor'));
+        $this->assertTrue($userA->fresh()->hasRole('student'));
         $this->assertTrue($userB->fresh()->hasRole('instructor'));
+    }
+
+    public function test_admin_users_search_can_filter_unlinked_only(): void
+    {
+        $linkedUser = User::factory()->student()->create(['name' => 'مرشح مربوط']);
+        $unlinkedUser = User::factory()->student()->create(['name' => 'مرشح حر']);
+
+        app(InstructorService::class)->create([
+            'name' => 'مدرب شاغر',
+            'user_id' => $linkedUser->id,
+        ]);
+
+        // Default query returns both
+        $defaultResponse = $this->getJson('/api/admin/users?search=مرشح');
+        $defaultResponse->assertOk();
+        $defaultIds = collect($defaultResponse->json('data'))->pluck('id')->all();
+        $this->assertContains($linkedUser->id, $defaultIds);
+        $this->assertContains($unlinkedUser->id, $defaultIds);
+
+        // unlinked_only=1 filters out the linked user
+        $filteredResponse = $this->getJson('/api/admin/users?search=مرشح&unlinked_only=1');
+        $filteredResponse->assertOk();
+        $filteredIds = collect($filteredResponse->json('data'))->pluck('id')->all();
+        $this->assertNotContains($linkedUser->id, $filteredIds);
+        $this->assertContains($unlinkedUser->id, $filteredIds);
     }
 
     public function test_service_throws_exception_if_instructor_role_missing(): void
