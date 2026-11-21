@@ -32,6 +32,7 @@ class E2EPlatformSeeder extends Seeder
 
         $adminRole = Role::findOrCreate('admin', 'web');
         $studentRole = Role::findOrCreate('student', 'web');
+        $instructorRole = Role::findOrCreate('instructor', 'web');
 
         // 1. Admin User
         $admin = User::firstOrCreate(

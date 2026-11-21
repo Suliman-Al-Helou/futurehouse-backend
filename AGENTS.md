@@ -30,3 +30,11 @@ the docs laravel to create api resource for it .
 ## Laravel Boost Context
 - Advanced framework guidelines and specialized tools are located inside the `.ai/guidelines/` and `.ai/rules/` directories.
 - You must read and merge the local Boost guidelines before working.
+
+# Engineering & Security Standards
+Before declaring any task complete, you MUST verify:
+1. **Impact Analysis**: Search (`grep`) for all references and subclasses of any Resource, Service, or Model you modify.
+2. **Data Exposure**: Never expose internal IDs (`user_id`), emails, or relations in API Resources without checking if the endpoint is public vs admin-only.
+3. **Input Bounds**: Always enforce strict upper limits (e.g., max 20 for dropdowns, max 50 for pagination) on query parameters.
+4. **Symmetric Testing**: Every validation rule must be tested on BOTH Create (`POST`) and Update (`PUT/PATCH`) endpoints.
+5. **Self-Review**: Run `git diff` and review your own changes for security flaws before reporting completion.

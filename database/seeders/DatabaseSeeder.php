@@ -22,6 +22,8 @@ class DatabaseSeeder extends Seeder
         ]);
         $role = Role::findOrCreate('admin', 'web');
         $admin->assignRole($role);
+        Role::findOrCreate('instructor', 'web');
+        Role::findOrCreate('student', 'web');
     }
 }
 // App\Models\User::where('email', 's@gmail.com')->update(['role' => 'admin']);

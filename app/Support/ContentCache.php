@@ -38,6 +38,7 @@ class ContentCache
     public static function forgetInstructors(): void
     {
         Cache::forget('instructors:all');
+        Cache::forget('instructors:public');
         FrontendCache::revalidate('instructors');
     }
 

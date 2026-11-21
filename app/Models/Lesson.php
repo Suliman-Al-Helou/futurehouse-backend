@@ -18,11 +18,12 @@ class Lesson extends Model
 
     protected $fillable = [
         'section_id', 'title', 'description',
-        'video_id', 'duration', 'order', 'is_preview',
+        'video_id', 'video_provider', 'duration', 'order', 'is_preview', 'is_published',
     ];
 
     protected $casts = [
         'is_preview' => 'boolean',
+        'is_published' => 'boolean',
         'duration' => 'integer',
         'order' => 'integer',
     ];

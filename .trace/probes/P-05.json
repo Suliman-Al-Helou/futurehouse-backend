@@ -1,0 +1,11 @@
+{
+    "probe": "P-05",
+    "decision_row": "D-05",
+    "note": "Display-only profile creation",
+    "observed": {
+        "status": 201,
+        "user_id": null,
+        "is_display_only": true,
+        "user_data": null
+    }
+}

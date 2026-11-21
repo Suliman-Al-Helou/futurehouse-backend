@@ -1,0 +1,13 @@
+{
+    "probe": "P-10",
+    "decision_row": "D-10",
+    "note": "Already linked user rejected with 422 unique error",
+    "observed": {
+        "status": 422,
+        "errors": {
+            "user_id": [
+                "The user id has already been taken."
+            ]
+        }
+    }
+}
