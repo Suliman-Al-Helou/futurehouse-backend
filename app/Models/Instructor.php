@@ -7,6 +7,7 @@ use App\Support\ContentCache;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Instructor extends Model
 {
@@ -64,7 +65,7 @@ class Instructor extends Model
     }
 
     // العلاقة مع الكورسات عبر instructor_id
-    public function courses()
+    public function courses(): HasMany
     {
         return $this->hasMany(Course::class, 'instructor_id');
     }
