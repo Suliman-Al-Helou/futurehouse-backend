@@ -70,9 +70,13 @@ final class InstructorService
         ContentCache::forgetInstructors();
     }
 
-    /** Bootstraps a skeleton instructor profile for a user if not present. */
-    public function bootstrapSkeletonForUser(User $user): Instructor
+    /** Bootstraps a skeleton instructor profile for an instructor user if not present. */
+    public function bootstrapSkeletonForUser(User $user): ?Instructor
     {
+        if (! $user->exists || ! $user->hasRole('instructor')) {
+            return null;
+        }
+
         $instructor = Instructor::firstOrCreate(
             ['user_id' => $user->id],
             ['name' => $user->name]

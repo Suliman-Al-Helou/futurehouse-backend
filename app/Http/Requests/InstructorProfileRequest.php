@@ -12,7 +12,17 @@ class InstructorProfileRequest extends FormRequest
     {
         $user = $this->user();
 
-        return $user !== null && ($user->hasRole('instructor') || $user->isAdmin());
+        if (! $user) {
+            return false;
+        }
+
+        if ($user->isAdmin()) {
+            return true;
+        }
+
+        $instructor = $user->instructor;
+
+        return $instructor !== null && $user->can('update', $instructor);
     }
 
     public function rules(): array
@@ -20,12 +30,13 @@ class InstructorProfileRequest extends FormRequest
         return [
             'name' => ['sometimes', 'string', 'max:255'],
             'title' => ['nullable', 'string', 'max:255'],
-            'bio' => ['nullable', 'string'],
+            'bio' => ['nullable', 'string', 'max:2000'],
             'avatar_url' => ['nullable', 'string', 'max:2048'],
             'cover_url' => ['nullable', 'string', 'max:2048'],
-            'specializations' => ['nullable', 'string'],
+            'specializations' => ['nullable', 'string', 'max:255'],
             'years_experience' => ['nullable', 'integer', 'min:0', 'max:100'],
-            'achievements' => ['nullable', 'array'],
+            'achievements' => ['nullable', 'array', 'max:20'],
+            'achievements.*' => ['string', 'max:255'],
             'twitter' => ['nullable', 'string', 'max:255'],
             'linkedin' => ['nullable', 'string', 'max:255'],
             'youtube' => ['nullable', 'string', 'max:255'],

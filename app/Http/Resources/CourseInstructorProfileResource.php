@@ -28,9 +28,8 @@ class CourseInstructorProfileResource extends JsonResource
             'linkedin' => $this->linkedin,
             'youtube' => $this->youtube,
             'user' => [
-                'id' => $this->user?->id ?? $request->user()?->id,
-                'name' => $this->user?->name ?? $request->user()?->name,
-                'email' => $this->user?->email ?? $request->user()?->email,
+                'name' => $this->user?->name ?? $this->name,
+                'email' => $this->user?->email,
             ],
         ];
     }

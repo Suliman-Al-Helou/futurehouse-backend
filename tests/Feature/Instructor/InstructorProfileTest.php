@@ -276,4 +276,42 @@ class InstructorProfileTest extends TestCase
         $response->assertStatus(422)
             ->assertJsonValidationErrors(['rating', 'total_reviews', 'students_count', 'user_id']);
     }
+
+    public function test_admin_without_instructor_profile_receives_404_and_does_not_pollute_database(): void
+    {
+        $admin = User::factory()->admin()->create();
+        Sanctum::actingAs($admin);
+
+        $response = $this->getJson('/api/instructor/profile');
+
+        $response->assertStatus(404);
+
+        $this->assertDatabaseMissing('instructors', [
+            'user_id' => $admin->id,
+        ]);
+    }
+
+    public function test_bio_exceeding_max_length_fails_with_422(): void
+    {
+        Sanctum::actingAs($this->instructorUser);
+
+        $response = $this->putJson('/api/instructor/profile', [
+            'bio' => str_repeat('a', 2001),
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors('bio');
+    }
+
+    public function test_achievements_exceeding_max_array_items_fails_with_422(): void
+    {
+        Sanctum::actingAs($this->instructorUser);
+
+        $response = $this->putJson('/api/instructor/profile', [
+            'achievements' => array_fill(0, 21, 'إنجاز تقني'),
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors('achievements');
+    }
 }

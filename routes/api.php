@@ -77,7 +77,7 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 // ─── Instructor Workspace ─────────────────────────────────
-Route::middleware(['auth:sanctum', 'role:instructor|admin'])
+Route::middleware(['auth:sanctum', 'role:instructor|admin', 'throttle:instructor-portal'])
     ->prefix('instructor')
     ->group(function () {
         // Self-Service Profile (Zero-IDOR)

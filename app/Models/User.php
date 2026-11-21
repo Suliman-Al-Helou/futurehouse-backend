@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Notifications\ResetPasswordNotification;
+use App\Services\InstructorService;
 use App\Support\ContentCache;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -101,11 +102,7 @@ class User extends Authenticatable
         $this->traitAssignRole(...$roles);
 
         if ($this->exists && $this->hasRole('instructor') && ! $this->instructor()->exists()) {
-            Instructor::firstOrCreate(
-                ['user_id' => $this->id],
-                ['name' => $this->name]
-            );
-            ContentCache::forgetInstructors();
+            app(InstructorService::class)->bootstrapSkeletonForUser($this);
         }
 
         return $this;
@@ -116,11 +113,7 @@ class User extends Authenticatable
         $this->traitSyncRoles(...$roles);
 
         if ($this->exists && $this->hasRole('instructor') && ! $this->instructor()->exists()) {
-            Instructor::firstOrCreate(
-                ['user_id' => $this->id],
-                ['name' => $this->name]
-            );
-            ContentCache::forgetInstructors();
+            app(InstructorService::class)->bootstrapSkeletonForUser($this);
         }
 
         return $this;
