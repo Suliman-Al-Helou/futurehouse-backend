@@ -15,7 +15,9 @@ use App\Http\Controllers\Api\CourseController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\EnrollmentController;
 use App\Http\Controllers\Api\Instructor\InstructorCourseController;
+use App\Http\Controllers\Api\Instructor\InstructorLessonController;
 use App\Http\Controllers\Api\Instructor\InstructorProfileController;
+use App\Http\Controllers\Api\Instructor\InstructorSectionController;
 use App\Http\Controllers\Api\LessonController;
 use App\Http\Controllers\Api\ProgressController;
 use App\Http\Controllers\Api\TaskController;
@@ -88,6 +90,18 @@ Route::middleware(['auth:sanctum', 'role:instructor|admin', 'throttle:instructor
         // Courses
         Route::get('/courses', [InstructorCourseController::class, 'index']);
         Route::get('/courses/{course}', [InstructorCourseController::class, 'show']);
+        Route::put('/courses/{course}', [InstructorCourseController::class, 'update']);
+
+        // Curriculum Sections
+        Route::get('/courses/{course}/sections', [InstructorSectionController::class, 'index']);
+        Route::post('/courses/{course}/sections', [InstructorSectionController::class, 'store']);
+        Route::put('/sections/{section}', [InstructorSectionController::class, 'update']);
+        Route::delete('/sections/{section}', [InstructorSectionController::class, 'destroy']);
+
+        // Curriculum Lessons
+        Route::post('/sections/{section}/lessons', [InstructorLessonController::class, 'store']);
+        Route::put('/lessons/{lesson}', [InstructorLessonController::class, 'update']);
+        Route::delete('/lessons/{lesson}', [InstructorLessonController::class, 'destroy']);
     });
 
 // ─── Admin ────────────────────────────────────────────────
