@@ -17,11 +17,17 @@ class InstructorCourseTest extends TestCase
     use RefreshDatabase;
 
     private User $instructorA;
+
     private User $instructorB;
+
     private User $admin;
+
     private Course $courseA1;
+
     private Course $courseA2;
+
     private Course $courseB1;
+
     private Course $courseUnassigned;
 
     protected function setUp(): void

@@ -120,6 +120,8 @@ class User extends Authenticatable
 
     /**
      * The instructor profile linked to this user account (1 user -> 1 instructor profile).
+     *
+     * @return HasOne<Instructor, $this>
      */
     public function instructor(): HasOne
     {
