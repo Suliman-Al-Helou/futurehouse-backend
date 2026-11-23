@@ -34,6 +34,13 @@ class InstructorUpdateCourseRequest extends FormRequest
             'requirements.*' => ['string', 'max:255'],
             'target_audience' => ['sometimes', 'nullable', 'array', 'max:30'],
             'target_audience.*' => ['string', 'max:255'],
+
+            // Sensitive administrative and commercial fields strictly prohibited for instructors
+            'price' => ['prohibited'],
+            'youtube_playlist_id' => ['prohibited'],
+            'instructor_id' => ['prohibited'],
+            'is_public' => ['prohibited'],
+            'status' => ['prohibited'],
         ];
 
         if ($this->hasFile('cover_image')) {
@@ -55,6 +62,11 @@ class InstructorUpdateCourseRequest extends FormRequest
             'cover_image.image' => 'يجب أن تكون صورة الغلاف ملف صورة صالح',
             'cover_image.mimes' => 'يجب أن تكون صورة الغلاف بصيغة: jpeg, png, jpg, webp',
             'cover_image.max' => 'حجم صورة الغلاف يجب ألا يتجاوز 2 ميجابايت',
+            'price.prohibited' => 'لا يمكن للمدرب تعديل سعر الكورس',
+            'youtube_playlist_id.prohibited' => 'لا يمكن للمدرب تعديل قائمة تشغيل اليوتيوب',
+            'instructor_id.prohibited' => 'لا يمكن للمدرب نقل ملكية الكورس',
+            'is_public.prohibited' => 'لا يمكن للمدرب تعديل حالة النشر العام',
+            'status.prohibited' => 'لا يمكن للمدرب تعديل حالة اعتماد الكورس',
         ];
     }
 }

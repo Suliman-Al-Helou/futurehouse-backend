@@ -129,20 +129,16 @@ class InstructorCourseMetadataUpdateTest extends TestCase
         $this->assertEquals('advanced', $log->changes['level']['new']);
     }
 
-    public function test_silent_stripping_guarantees_commercial_attributes_are_never_tampered(): void
+    public function test_silent_stripping_guarantees_unwhitelisted_attributes_are_never_tampered(): void
     {
         Sanctum::actingAs($this->instructorA);
 
         $payload = [
             'title' => 'كورس الدوكير المحدث شرعياً',
-            // Tamper attempt with commercial and administrative parameters
-            'price' => 0.00,
-            'status' => 'draft',
-            'is_public' => false,
+            // Tamper attempt with unwhitelisted parameters
             'is_popular' => true,
             'rating' => 5.0,
-            'instructor_id' => 9999,
-            'youtube_playlist_id' => 'PL_ATTACKER_INJECTED',
+            'students_count' => 9999,
         ];
 
         $response = $this->putJson("/api/instructor/courses/{$this->courseA1->id}", $payload);
@@ -155,23 +151,39 @@ class InstructorCourseMetadataUpdateTest extends TestCase
         // Educational attribute was updated
         $this->assertEquals('كورس الدوكير المحدث شرعياً', $freshCourse->title);
 
-        // Commercial and administrative attributes remain strictly unchanged in the DB
-        $this->assertEquals(199.99, (float) $freshCourse->price);
-        $this->assertEquals('published', $freshCourse->status);
-        $this->assertTrue((bool) $freshCourse->is_public);
+        // Unwhitelisted attributes remain strictly unchanged in the DB
         $this->assertFalse((bool) $freshCourse->is_popular);
         $this->assertEquals(4.5, (float) $freshCourse->rating);
-        $this->assertEquals($this->instructorA->instructor->id, $freshCourse->instructor_id);
-        $this->assertEquals('PL_ORIGINAL_DOCKER_123', $freshCourse->youtube_playlist_id);
 
         // Audit log only records the legitimate title change
         $log = CourseActivityLog::where('course_id', $this->courseA1->id)->first();
         $this->assertNotNull($log);
         $this->assertArrayHasKey('title', $log->changes);
-        $this->assertArrayNotHasKey('price', $log->changes);
-        $this->assertArrayNotHasKey('status', $log->changes);
-        $this->assertArrayNotHasKey('is_public', $log->changes);
-        $this->assertArrayNotHasKey('youtube_playlist_id', $log->changes);
+        $this->assertArrayNotHasKey('is_popular', $log->changes);
+        $this->assertArrayNotHasKey('rating', $log->changes);
+        $this->assertArrayNotHasKey('students_count', $log->changes);
+    }
+
+    public function test_prohibited_commercial_and_administrative_attributes_return_422(): void
+    {
+        Sanctum::actingAs($this->instructorA);
+
+        $response = $this->putJson("/api/instructor/courses/{$this->courseA1->id}", [
+            'price' => 0.00,
+            'status' => 'draft',
+            'is_public' => false,
+            'instructor_id' => 9999,
+            'youtube_playlist_id' => 'PL_ATTACKER_INJECTED',
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors([
+                'price',
+                'status',
+                'is_public',
+                'instructor_id',
+                'youtube_playlist_id',
+            ]);
     }
 
     public function test_submitting_identical_metadata_does_not_create_redundant_activity_log(): void
