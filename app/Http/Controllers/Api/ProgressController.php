@@ -34,12 +34,17 @@ class ProgressController extends Controller
 
         $best = max((float) $validated['watched_percent'], $existing?->watched_percent ?? 0);
 
+        $hasTask = $lesson->task()->exists();
+        $isCompleted = $hasTask
+            ? ($existing ? (bool) $existing->completed : false)
+            : ($best >= 80);
+
         $progress = UserLessonProgress::updateOrCreate(
             ['user_id' => $user->id, 'lesson_id' => $lesson->id],
             [
                 'watched_percent' => $best,
                 'last_position' => (int) round((float) $validated['last_position']),
-                'completed' => $best >= 80,
+                'completed' => $isCompleted,
             ]
         );
 
@@ -54,7 +59,7 @@ class ProgressController extends Controller
         return response()->json([
             'watched_percent' => $progress->watched_percent,
             'completed' => $progress->completed,
-            'task_unlocked' => $progress->completed,
+            'task_unlocked' => $best >= 80,
         ]);
     }
 

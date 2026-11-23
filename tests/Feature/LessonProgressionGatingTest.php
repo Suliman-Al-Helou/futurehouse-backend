@@ -9,11 +9,9 @@ use App\Models\Enrollment;
 use App\Models\Lesson;
 use App\Models\Section;
 use App\Models\Task;
-use App\Models\TaskAttempt;
 use App\Models\User;
 use App\Models\UserLessonProgress;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 

@@ -239,6 +239,7 @@ class TaskTest extends TestCase
             'answers' => [
                 1 => 'A Database',
                 2 => 'true',
+                3 => 'Model View Controller separates data, presentation, and logic.',
             ],
         ];
 
@@ -279,7 +280,11 @@ class TaskTest extends TestCase
         ]);
 
         $response = $this->postJson("/api/lessons/{$this->lesson->id}/task", [
-            'answers' => [1 => 'A PHP Framework'],
+            'answers' => [
+                1 => 'A PHP Framework',
+                2 => 'false',
+                3 => 'Model View Controller',
+            ],
         ]);
 
         $response->assertOk()
@@ -312,7 +317,11 @@ class TaskTest extends TestCase
         }
 
         $response = $this->postJson("/api/lessons/{$this->lesson->id}/task", [
-            'answers' => [1 => 'A PHP Framework'],
+            'answers' => [
+                1 => 'A PHP Framework',
+                2 => 'false',
+                3 => 'Model View Controller',
+            ],
         ]);
 
         $response->assertStatus(429)
@@ -413,14 +422,22 @@ class TaskTest extends TestCase
 
         // First failed attempt
         $res1 = $this->postJson("/api/lessons/{$this->lesson->id}/task", [
-            'answers' => [1 => 'Wrong Answer'],
+            'answers' => [
+                1 => 'Wrong Answer',
+                2 => 'true',
+                3 => 'Model View Controller',
+            ],
         ]);
         $res1->assertOk()
             ->assertJsonPath('passed', false);
 
         // Immediate second attempt should hit cooldown
         $res2 = $this->postJson("/api/lessons/{$this->lesson->id}/task", [
-            'answers' => [1 => 'A PHP Framework'],
+            'answers' => [
+                1 => 'A PHP Framework',
+                2 => 'false',
+                3 => 'Model View Controller',
+            ],
         ]);
         $res2->assertStatus(429)
             ->assertJsonStructure(['message', 'cooldown_remaining_minutes']);

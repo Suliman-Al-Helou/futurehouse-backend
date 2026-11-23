@@ -10,6 +10,7 @@ use App\Models\Lesson;
 use App\Models\Task;
 use App\Models\TaskAttempt;
 use App\Models\User;
+use App\Models\UserLessonProgress;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 
@@ -48,6 +49,21 @@ final class TaskService
         $maxAttempts = $task->max_attempts ?? 3;
 
         return DB::transaction(function () use ($task, $user, $userAnswers, $maxAttempts): array {
+            // تحقق من مشاهدة ≥ 80% من الفيديو أولاً
+            $userProgress = UserLessonProgress::where('user_id', $user->id)
+                ->where('lesson_id', $task->lesson_id)
+                ->first();
+
+            if (! $userProgress || (float) $userProgress->watched_percent < 80) {
+                return [
+                    'status' => 403,
+                    'data' => [
+                        'message' => 'يجب مشاهدة ≥ 80% من الفيديو أولاً',
+                        'watched_percent' => $userProgress ? $userProgress->watched_percent : 0,
+                    ],
+                ];
+            }
+
             // تحقق من عدد المحاولات مع قفل لمنع التزامن
             $attempts = TaskAttempt::where('user_id', $user->id)
                 ->where('task_id', $task->id)
@@ -108,9 +124,9 @@ final class TaskService
             $gradableCount = 0;
 
             foreach ($questions as $index => $q) {
-                $qId = $q['id'] ?? $index + 1;
+                $qId = (string) ($q['id'] ?? $index + 1);
                 $type = $q['type'] ?? 'mcq';
-                $userAns = $userAnswers[$qId] ?? $userAnswers[(string) $qId] ?? null;
+                $userAns = $userAnswers[$qId] ?? (is_numeric($qId) ? ($userAnswers[(int) $qId] ?? null) : null);
 
                 if ($type === 'open') {
                     $results[$qId] = [
@@ -123,9 +139,14 @@ final class TaskService
                 }
 
                 $gradableCount++;
-                $correct = (string) ($q['correct_answer'] ?? '');
-                $isCorrect = is_scalar($userAns)
-                    && strtolower(trim((string) $userAns)) === strtolower(trim($correct));
+                $correct = $q['correct_answer'] ?? '';
+
+                $isCorrect = false;
+                if (is_numeric($userAns) && is_numeric($correct)) {
+                    $isCorrect = (int) $userAns === (int) $correct;
+                } elseif (is_scalar($userAns)) {
+                    $isCorrect = strtolower(trim((string) $userAns)) === strtolower(trim((string) $correct));
+                }
 
                 if ($isCorrect) {
                     $correctCount++;
@@ -151,6 +172,12 @@ final class TaskService
                 'passed' => $passed,
                 'attempted_at' => now(),
             ]);
+
+            // إكمال الدرس ذرياً داخل المعاملة (النموذج التكويني: حل جميع الأسئلة يكمل الدرس)
+            UserLessonProgress::updateOrCreate(
+                ['user_id' => $user->id, 'lesson_id' => $task->lesson_id],
+                ['completed' => true]
+            );
 
             $newAttemptsUsed = $attemptsUsed + 1;
             $attemptsRemaining = max(0, $maxAttempts - $newAttemptsUsed);
