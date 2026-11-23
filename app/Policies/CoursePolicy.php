@@ -45,6 +45,10 @@ class CoursePolicy
 
     public function watchLesson(User $user, Course $course, Lesson $lesson): bool
     {
+        if ($this->manageAsInstructor($user, $course)) {
+            return true;
+        }
+
         return $lesson->isPreview()
             || ($this->watch($user, $course) && $lesson->isUnlockedFor($user));
     }

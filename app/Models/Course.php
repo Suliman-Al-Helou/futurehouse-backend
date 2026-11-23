@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Gate;
 
 class Course extends Model
 {
@@ -81,13 +82,17 @@ class Course extends Model
     }
 
     /** Eager load public curriculum details (sections and previewable lessons). */
-    public function loadPublicDetails(): self
+    public function loadPublicDetails(?User $user = null): self
     {
+        $canManage = $user && Gate::forUser($user)->allows('manageAsInstructor', $this);
+
         return $this->load([
             'instructor',
-            'sections.lessons' => fn ($query) => $query
-                ->select('id', 'section_id', 'title', 'description', 'duration', 'order', 'is_preview', 'video_id')
-                ->orderBy('order'),
+            'sections.lessons' => function ($query) use ($canManage) {
+                $query->select('id', 'section_id', 'title', 'description', 'duration', 'order', 'is_preview', 'video_id', 'video_provider', 'is_published')
+                    ->when(! $canManage, fn ($q) => $q->where('is_published', true))
+                    ->orderBy('order');
+            },
         ])->loadCount(['enrollments as approved_count' => fn ($q) => $q->where('status', 'approved')]);
     }
 
@@ -97,7 +102,8 @@ class Course extends Model
         return $query->with([
             'instructor',
             'sections.lessons' => fn ($query) => $query
-                ->select('id', 'section_id', 'title', 'description', 'duration', 'order', 'is_preview', 'video_id')
+                ->select('id', 'section_id', 'title', 'description', 'duration', 'order', 'is_preview', 'video_id', 'video_provider', 'is_published')
+                ->where('is_published', true)
                 ->orderBy('order'),
         ])->withCount(['enrollments as approved_count' => fn ($q) => $q->where('status', 'approved')]);
     }

@@ -1,12 +1,12 @@
 {
     "probe": "P-04",
     "decision_row": "D-04",
-    "note": "Valid student linking grants instructor role",
+    "recorded_at": "2026-11-23T08:21:35Z",
+    "stamp": "23583a32856eafdf8dc126fa0309f04ff63af910a18275840c7fa44608cc8c8e",
+    "note": "",
     "observed": {
         "status": 201,
-        "instructor_id": 1,
         "user_id": 3,
-        "is_display_only": false,
-        "student_has_instructor_role": true
+        "role_assigned": true
     }
 }

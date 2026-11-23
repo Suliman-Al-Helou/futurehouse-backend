@@ -1,7 +1,9 @@
 {
     "probe": "P-01",
     "decision_row": "D-01",
-    "note": "Unauthenticated request rejection",
+    "recorded_at": "2026-11-23T08:21:35Z",
+    "stamp": "246015033c512eca3fcfd1e90f0436ac203c2c8461f446abe37691a9c3a3cbd3",
+    "note": "",
     "observed": {
         "status": 401,
         "message": "غير مصرح لك بالوصول، يرجى تسجيل الدخول أولاً"
