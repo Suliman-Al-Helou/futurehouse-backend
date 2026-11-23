@@ -505,54 +505,6 @@ parameters:
 			path: app/Http/Resources/FaqResource.php
 
 		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\LessonResource\:\:\$description\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/LessonResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\LessonResource\:\:\$duration\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/LessonResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\LessonResource\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/LessonResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\LessonResource\:\:\$is_preview\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/LessonResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\LessonResource\:\:\$order\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/LessonResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\LessonResource\:\:\$section_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/LessonResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\LessonResource\:\:\$title\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/LessonResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\LessonResource\:\:\$video_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/LessonResource.php
-
-		-
 			message: '#^Access to an undefined property App\\Http\\Resources\\SectionResource\:\:\$course_id\.$#'
 			identifier: property.notFound
 			count: 1

@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\CourseDetailResource;
 use App\Http\Resources\CourseResource;
 use App\Models\Course;
+use App\Models\User;
 use App\Support\ContentCache;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -50,7 +51,8 @@ class CourseController extends Controller
     {
         abort_if($course->status === 'draft', 404);
 
-        $user = auth('sanctum')->user() ?? $request->user();
+        $authUser = auth('sanctum')->user() ?? $request->user();
+        $user = $authUser instanceof User ? $authUser : null;
 
         return new CourseDetailResource($course->loadPublicDetails($user));
     }
