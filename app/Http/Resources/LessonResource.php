@@ -30,18 +30,19 @@ class LessonResource extends JsonResource
             || ($singleLessonId !== null && ((int) $singleLessonId === (int) $this->id));
         $enforceGate = ! $isSingleLessonRequest;
 
+        $playback = $videoManager->resolvePlayback(
+            $this->resource,
+            enforceGate: $enforceGate
+        );
+
         return [
             'id' => $this->id,
             'section_id' => $this->section_id,
             'title' => $this->title,
             'description' => $this->description,
-            'video_id' => $this->video_id,
+            'video_id' => $enforceGate && ! $this->is_preview ? null : $this->video_id,
             'video_provider' => $this->video_provider ?? config('services.video.default', 'youtube'),
-            'playback' => $videoManager->resolvePlayback(
-                $this->resource,
-                $request->user(),
-                enforceGate: $enforceGate
-            ),
+            'playback' => $playback,
             'duration' => $this->duration,
             'order' => $this->order,
             'is_preview' => (bool) $this->is_preview,

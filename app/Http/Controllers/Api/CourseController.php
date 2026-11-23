@@ -46,10 +46,10 @@ class CourseController extends Controller
     }
 
     /** Single course public view with curriculum (sections & lessons). */
-    public function show(Course $course): CourseDetailResource
+    public function show(Request $request, Course $course): CourseDetailResource
     {
         abort_if($course->status === 'draft', 404);
 
-        return new CourseDetailResource($course->loadPublicDetails());
+        return new CourseDetailResource($course->loadPublicDetails($request->user()));
     }
 }

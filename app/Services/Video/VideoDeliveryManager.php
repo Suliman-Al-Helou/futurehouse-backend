@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Services\Video;
 
 use App\Models\Lesson;
-use App\Models\User;
 use Illuminate\Support\Carbon;
 
 class VideoDeliveryManager
@@ -15,7 +14,7 @@ class VideoDeliveryManager
      *
      * @return array{provider: string, source?: string, url?: string, expires_at: string|null}|null
      */
-    public function resolvePlayback(Lesson $lesson, ?User $user = null, bool $enforceGate = false): ?array
+    public function resolvePlayback(Lesson $lesson, bool $enforceGate = false): ?array
     {
         if (empty($lesson->video_id)) {
             return null;
@@ -67,22 +66,5 @@ class VideoDeliveryManager
             'url' => $url,
             'expires_at' => $expiresAt,
         ];
-    }
-
-    /**
-     * Check whether user has administrative or instructor ownership over lesson.
-     */
-    protected function canManageLesson(Lesson $lesson, User $user): bool
-    {
-        if ($user->hasRole('admin')) {
-            return true;
-        }
-
-        $course = $lesson->getCourse();
-        if ($course && $course->instructor_id !== null && $course->instructor_id === $user->instructor?->id) {
-            return true;
-        }
-
-        return false;
     }
 }

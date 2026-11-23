@@ -20,10 +20,7 @@ class LessonController extends Controller
         abort_if($course->status === 'draft', 404);
 
         $user = $request->user();
-        $isManager = $user && (
-            $user->hasRole('admin') ||
-            ($course->instructor_id !== null && $course->instructor_id === $user->instructor?->id)
-        );
+        $isManager = $user && Gate::forUser($user)->allows('manageAsInstructor', $course);
 
         // Draft lessons strictly return 404 for students and unauthenticated visitors
         if (! ($lesson->is_published ?? true) && ! $isManager) {
