@@ -12,13 +12,43 @@
 # 🧭 GENERAL AGENT EXECUTION RULES (قواعد تشغيلية إجبارية في كل جلسة)
 
 1. **فحص الـ Skills المتاحة أولاً واقتراحها للمهمة:**
-   - يجب في بداية كل مهمة فحص مجلد الـ Skills (`/home/suliman/Documents/courses/frontend-course/.agents/skills/`) واقتراح واستدعاء الـ Skill المناسبة فوراً لمنع التشتت والهلوسة والدخول في حلقات مفرغة (Loops).
+   - يجب في بداية كل مهمة فحص مجلدات الـ Skills (`/home/suliman/Documents/courses/backendCourse/.agents/skills/` و `/home/suliman/Documents/courses/frontend-course/.agents/skills/`) واقتراح واستدعاء الـ Skill المناسبة فوراً لمنع التشتت والهلوسة والدخول في حلقات مفرغة (Loops).
 2. **منع الافتراضات والتخمين تماماً والاعتماد على البحث الحي في الويب:**
    - يُمنع منعاً باتاً افتراض حلول أو واجهات برمجية أو قيود تقنية دون فحص مباشر وبحث دقيق ومحدث في الويب لأحدث التوثيقات والممارسات.
 3. **البحث المعماري عن أفضل الممارسات المتبعة (Industry Best Practices):**
    - قبل تصميم أو بناء أي Feature، يجب البحث عن أفضل الطرق الهندسية القياسية عالمياً لبنائها بأبسط شكل ممكن وأعلى جودة.
 4. **البدء بالحد الأدنى الصارم للمكون (Minimalist Surface Rule):**
    - ابدأ دائماً بأبسط وأقل شكل ممكن للخدمة أو نقطة النهاية (Minimalist Surface). يُمنع منعاً باتاً ابتكار طبقات إضافية أو تعقيدات لم تنص عليها المتطلبات الصريحة.
+
+---
+
+# 🛠️ MANDATORY TOOLING & SKILLS ACTIVATION MATRIX (مصفوفة التفعيل الإجباري للأدوات والمهارات)
+
+يجب على أي Agent يعمل على الباك إند الالتزام الصارم بتفعيل واستدعاء الـ MCP Servers والـ Skills المناسبة فور تحقق شروطها:
+
+### 1. الـ MCP Servers الإلزامية:
+- **`laravel-boost` (محرك فحص وتطوير Laravel):**
+  - **الشرط الإلزامي:** عند فحص مسارات الـ API (`routes/api.php`)، نماذج Eloquent (`app/Models/`)، أو تتبع الـ Migrations، الجداول، والـ Configs.
+  - **الإجراء:** استخدم أدوات Laravel Boost لاستخراج بنية الجداول وقوائم المسارات والـ Artisan commands بدقة تامة وبلا تخمين.
+- **`context7` (توثيق الحزم الحديثة):**
+  - **الشرط الإلزامي:** التعامل مع أي حزم طرف ثالث (Spatie Permission، Laravel Sanctum، Horizon، Cashier، إلخ).
+  - **الإجراء:** استدعاء توثيق المكتبات الحديثة لتفادي الـ Deprecated APIs أو التغييرات الجذرية.
+- **`github` (مزامنة المستودعات):**
+  - **الشرط الإلزامي:** فحص الـ Commits، الـ Pull Requests، أو تتبع التغييرات المرتبطة مع مستودع الفرونت إند.
+
+### 2. الـ Skills الإلزامية:
+- **`laravel-best-practices`:**
+  - **الشرط الإلزامي:** كتابة أو تعديل أي Controller، Model، Migration، Form Request، أو Policy.
+  - **الإجراء:** الالتزام الصارم بقواعد الكود النظيف في Laravel (Skinny Controllers، Form Requests للتحقق، و API Resources للتنسيق).
+- **`laravel-permission-development`:**
+  - **الشرط الإلزامي:** التعامل مع الصلاحيات والأدوار (Admin, Instructor, Student) وحماية مسارات الـ API.
+  - **الإجراء:** التحقق من الصلاحيات عبر `$user->can()` واستخدام الـ Policies المركزية (`CoursePolicy`, `LessonPolicy`) لمنع ثغرات الـ IDOR.
+- **`api-contract-sync`:**
+  - **الشرط الإلزامي:** إضافة أو تعديل أي نقطة نهاية API أو تعديل حقول الـ Resource والـ FormRequest.
+  - **الإجراء:** التأكد من مطابقة الـ Payload ورموز الـ HTTP مع أنواع الواجهة الأمامية في `frontend-course/src/types/` لمنع الـ Contract Drift.
+- **`tdd` / `testing-best-practices`:**
+  - **الشرط الإلزامي:** بناء أي Endpoint جديد أو تعديل منطق الحماية والامتحانات والدروس.
+  - **الإجراء:** كتابة Feature Tests تغطي مصفوفة الصلاحيات بالكامل (`guest`, `student`, `instructor`, `admin`) قبل دمج الكود.
 
 ---
 
