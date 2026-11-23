@@ -10,6 +10,7 @@ use App\Http\Resources\CourseInstructorResource;
 use App\Models\Course;
 use App\Models\User;
 use App\Services\CourseService;
+use App\Services\YouTubeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -89,5 +90,40 @@ class InstructorCourseController extends Controller
         );
 
         return response()->json(new CourseInstructorResource($updatedCourse->load('instructor')));
+    }
+
+    /**
+     * Returns YouTube playlist videos for the assigned course.
+     */
+    public function youtubeVideos(Course $course, YouTubeService $youtubeService): JsonResponse
+    {
+        Gate::authorize('manageAsInstructor', $course);
+
+        $playlistId = $course->youtube_playlist_id;
+        if (! $playlistId) {
+            return response()->json([
+                'playlist_id' => null,
+                'connected' => $youtubeService->isConnected(),
+                'videos' => [],
+            ]);
+        }
+
+        $videos = $youtubeService->getPlaylistVideos($playlistId);
+
+        // Check which videos are already added as lessons
+        $existingVideoIds = $course->lessons()
+            ->whereNotNull('video_id')
+            ->pluck('video_id')
+            ->toArray();
+
+        foreach ($videos as &$video) {
+            $video['is_already_added'] = in_array($video['id'], $existingVideoIds, true);
+        }
+
+        return response()->json([
+            'playlist_id' => $playlistId,
+            'connected' => $youtubeService->isConnected(),
+            'videos' => $videos,
+        ]);
     }
 }

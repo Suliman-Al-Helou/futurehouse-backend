@@ -296,4 +296,48 @@ class YouTubeService
             Log::warning("Failed adding video {$videoId} to playlist {$playlistId}: ".$e->getMessage());
         }
     }
+
+    /** Fetches videos in a given YouTube playlist */
+    public function getPlaylistVideos(string $playlistId): array
+    {
+        try {
+            $client = $this->getAuthenticatedClient();
+            if (! $client) {
+                return [];
+            }
+
+            $youtube = new YouTube($client);
+            $response = $youtube->playlistItems->listPlaylistItems('snippet,contentDetails', [
+                'playlistId' => $playlistId,
+                'maxResults' => 50,
+            ]);
+
+            $videos = [];
+            foreach ($response->getItems() as $item) {
+                $snippet = $item->getSnippet();
+                $videoId = $snippet->getResourceId()?->getVideoId();
+                if (! $videoId) {
+                    continue;
+                }
+
+                $thumbnails = $snippet->getThumbnails();
+                $thumbnailUrl = $thumbnails?->getMedium()?->getUrl()
+                    ?? $thumbnails?->getDefault()?->getUrl()
+                    ?? "https://img.youtube.com/vi/{$videoId}/mqdefault.jpg";
+
+                $videos[] = [
+                    'id' => $videoId,
+                    'title' => $snippet->getTitle() ?? 'بدون عنوان',
+                    'thumbnail' => $thumbnailUrl,
+                    'duration_minutes' => 0,
+                ];
+            }
+
+            return $videos;
+        } catch (\Throwable $e) {
+            Log::error('YouTube getPlaylistVideos failed: '.$e->getMessage());
+
+            return [];
+        }
+    }
 }

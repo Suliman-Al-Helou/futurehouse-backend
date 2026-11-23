@@ -10,6 +10,7 @@ use App\Http\Requests\UpdateCourseRequest;
 use App\Http\Resources\CourseAdminResource;
 use App\Models\Course;
 use App\Services\CourseService;
+use App\Services\YouTubeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
@@ -74,5 +75,35 @@ class AdminCourseController extends Controller
         }
 
         return response()->noContent();
+    }
+
+    /** Returns YouTube playlist videos for the course. */
+    public function youtubeVideos(Course $course, YouTubeService $youtubeService): JsonResponse
+    {
+        $playlistId = $course->youtube_playlist_id;
+        if (! $playlistId) {
+            return response()->json([
+                'playlist_id' => null,
+                'connected' => $youtubeService->isConnected(),
+                'videos' => [],
+            ]);
+        }
+
+        $videos = $youtubeService->getPlaylistVideos($playlistId);
+
+        $existingVideoIds = $course->lessons()
+            ->whereNotNull('video_id')
+            ->pluck('video_id')
+            ->toArray();
+
+        foreach ($videos as &$video) {
+            $video['is_already_added'] = in_array($video['id'], $existingVideoIds, true);
+        }
+
+        return response()->json([
+            'playlist_id' => $playlistId,
+            'connected' => $youtubeService->isConnected(),
+            'videos' => $videos,
+        ]);
     }
 }

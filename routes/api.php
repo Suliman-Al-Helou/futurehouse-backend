@@ -18,6 +18,7 @@ use App\Http\Controllers\Api\Instructor\InstructorCourseController;
 use App\Http\Controllers\Api\Instructor\InstructorLessonController;
 use App\Http\Controllers\Api\Instructor\InstructorProfileController;
 use App\Http\Controllers\Api\Instructor\InstructorSectionController;
+use App\Http\Controllers\Api\Instructor\InstructorTaskController;
 use App\Http\Controllers\Api\LessonController;
 use App\Http\Controllers\Api\ProgressController;
 use App\Http\Controllers\Api\TaskController;
@@ -91,6 +92,7 @@ Route::middleware(['auth:sanctum', 'role:instructor|admin', 'throttle:instructor
         Route::get('/courses', [InstructorCourseController::class, 'index']);
         Route::get('/courses/{course}', [InstructorCourseController::class, 'show']);
         Route::put('/courses/{course}', [InstructorCourseController::class, 'update']);
+        Route::get('/courses/{course}/youtube-videos', [InstructorCourseController::class, 'youtubeVideos']);
 
         // Curriculum Sections
         Route::get('/courses/{course}/sections', [InstructorSectionController::class, 'index']);
@@ -102,6 +104,12 @@ Route::middleware(['auth:sanctum', 'role:instructor|admin', 'throttle:instructor
         Route::post('/sections/{section}/lessons', [InstructorLessonController::class, 'store']);
         Route::put('/lessons/{lesson}', [InstructorLessonController::class, 'update']);
         Route::delete('/lessons/{lesson}', [InstructorLessonController::class, 'destroy']);
+
+        // Lesson Tasks
+        Route::get('/lessons/{lesson}/task', [InstructorTaskController::class, 'show']);
+        Route::post('/lessons/{lesson}/task', [InstructorTaskController::class, 'store']);
+        Route::put('/lessons/{lesson}/task', [InstructorTaskController::class, 'update']);
+        Route::delete('/lessons/{lesson}/task', [InstructorTaskController::class, 'destroy']);
     });
 
 // ─── Admin ────────────────────────────────────────────────
@@ -122,6 +130,7 @@ Route::middleware(['auth:sanctum', 'can:manageAdmin,App\Models\User'])->prefix('
         Route::get('/courses/{course}', [AdminCourseController::class, 'show']);
         Route::put('/courses/{course}', [AdminCourseController::class, 'update']);
         Route::delete('/courses/{course}', [AdminCourseController::class, 'destroy']);
+        Route::get('/courses/{course}/youtube-videos', [AdminCourseController::class, 'youtubeVideos']);
         Route::get('/courses/{course}/sections', [AdminSectionController::class, 'index']);
         Route::post('/courses/{course}/sections', [AdminSectionController::class, 'store']);
 
