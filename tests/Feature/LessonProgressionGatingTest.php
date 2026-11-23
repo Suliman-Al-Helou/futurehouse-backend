@@ -11,6 +11,7 @@ use App\Models\Section;
 use App\Models\Task;
 use App\Models\User;
 use App\Models\UserLessonProgress;
+use App\Services\TaskService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -386,5 +387,66 @@ class LessonProgressionGatingTest extends TestCase
             'lesson_id' => $this->lesson1->id,
             'completed' => true,
         ]);
+    }
+
+    /**
+     * Test 8: Whitespace-only answers are strictly rejected with 422.
+     */
+    public function test_whitespace_only_answers_are_strictly_rejected_with_422(): void
+    {
+        Sanctum::actingAs($this->student);
+
+        UserLessonProgress::create([
+            'user_id' => $this->student->id,
+            'lesson_id' => $this->lesson1->id,
+            'watched_percent' => 100,
+            'completed' => false,
+        ]);
+
+        $payload = [
+            'answers' => [
+                1 => 0,
+                2 => 0,
+                3 => '   ', // whitespace attempt to bypass
+                4 => 1,
+            ],
+        ];
+
+        $response = $this->postJson("/api/lessons/{$this->lesson1->id}/task", $payload);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors('answers');
+
+        $this->assertSame(
+            'يجب الإجابة على جميع الأسئلة لتسليم المهمة',
+            $response->json('message')
+        );
+    }
+
+    /**
+     * Test 9: TaskService directly validates completeness and rejects incomplete submissions.
+     */
+    public function test_task_service_directly_rejects_missing_answers(): void
+    {
+        UserLessonProgress::create([
+            'user_id' => $this->student->id,
+            'lesson_id' => $this->lesson1->id,
+            'watched_percent' => 100,
+            'completed' => false,
+        ]);
+
+        /** @var TaskService $taskService */
+        $taskService = app(TaskService::class);
+
+        // Missing question 4
+        $result = $taskService->submitAttempt($this->task, $this->student, [
+            1 => 0,
+            2 => 0,
+            3 => 1,
+        ]);
+
+        $this->assertSame(422, $result['status']);
+        $this->assertSame('يجب الإجابة على جميع الأسئلة لتسليم المهمة', $result['data']['message']);
+        $this->assertDatabaseCount('task_attempts', 0);
     }
 }

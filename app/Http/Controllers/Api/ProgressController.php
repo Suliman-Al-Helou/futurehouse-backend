@@ -37,7 +37,7 @@ class ProgressController extends Controller
         $hasTask = $lesson->task()->exists();
         $isCompleted = $hasTask
             ? ($existing ? (bool) $existing->completed : false)
-            : ($best >= 80);
+            : ($best >= Lesson::WATCH_PERCENT_THRESHOLD);
 
         $progress = UserLessonProgress::updateOrCreate(
             ['user_id' => $user->id, 'lesson_id' => $lesson->id],
@@ -59,7 +59,7 @@ class ProgressController extends Controller
         return response()->json([
             'watched_percent' => $progress->watched_percent,
             'completed' => $progress->completed,
-            'task_unlocked' => $best >= 80,
+            'task_unlocked' => $best >= Lesson::WATCH_PERCENT_THRESHOLD,
         ]);
     }
 

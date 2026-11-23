@@ -38,12 +38,12 @@ class TaskController extends Controller
 
         $user = Auth::user();
 
-        // يجب إكمال الفيديو أولاً (مشاهدة ≥ 80%)
-        $progress = UserLessonProgress::where('user_id', $user->id)
-            ->where('lesson_id', $lesson->id)
-            ->first();
+        // يجب مشاهدة الفيديو أولاً (مشاهدة ≥ 80%)
+        if (! $lesson->isWatchUnlockedFor($user)) {
+            $progress = UserLessonProgress::where('user_id', $user->id)
+                ->where('lesson_id', $lesson->id)
+                ->first();
 
-        if (! $progress || (float) $progress->watched_percent < 80) {
             return response()->json([
                 'message' => 'يجب مشاهدة ≥ 80% من الفيديو أولاً',
                 'watched_percent' => $progress?->watched_percent ?? 0,
@@ -119,11 +119,11 @@ class TaskController extends Controller
         $user = Auth::user();
 
         // يجب مشاهدة الفيديو أولاً قبل تسليم المهمة (مشاهدة ≥ 80%)
-        $progress = UserLessonProgress::where('user_id', $user->id)
-            ->where('lesson_id', $lesson->id)
-            ->first();
+        if (! $lesson->isWatchUnlockedFor($user)) {
+            $progress = UserLessonProgress::where('user_id', $user->id)
+                ->where('lesson_id', $lesson->id)
+                ->first();
 
-        if (! $progress || (float) $progress->watched_percent < 80) {
             return response()->json([
                 'message' => 'يجب مشاهدة ≥ 80% من الفيديو أولاً',
                 'watched_percent' => $progress?->watched_percent ?? 0,

@@ -49,22 +49,7 @@ final class TaskService
         $maxAttempts = $task->max_attempts ?? 3;
 
         return DB::transaction(function () use ($task, $user, $userAnswers, $maxAttempts): array {
-            // تحقق من مشاهدة ≥ 80% من الفيديو أولاً
-            $userProgress = UserLessonProgress::where('user_id', $user->id)
-                ->where('lesson_id', $task->lesson_id)
-                ->first();
-
-            if (! $userProgress || (float) $userProgress->watched_percent < 80) {
-                return [
-                    'status' => 403,
-                    'data' => [
-                        'message' => 'يجب مشاهدة ≥ 80% من الفيديو أولاً',
-                        'watched_percent' => $userProgress ? $userProgress->watched_percent : 0,
-                    ],
-                ];
-            }
-
-            // تحقق من عدد المحاولات مع قفل لمنع التزامن
+            // 1. تحقق من عدد المحاولات مع قفل لمنع التزامن أولاً
             $attempts = TaskAttempt::where('user_id', $user->id)
                 ->where('task_id', $task->id)
                 ->lockForUpdate()
@@ -114,6 +99,36 @@ final class TaskService
                             ],
                         ];
                     }
+                }
+            }
+
+            // 2. تحقق من مشاهدة ≥ 80% من الفيديو
+            $userProgress = UserLessonProgress::where('user_id', $user->id)
+                ->where('lesson_id', $task->lesson_id)
+                ->first();
+
+            if (! $userProgress || (float) $userProgress->watched_percent < Lesson::WATCH_PERCENT_THRESHOLD) {
+                return [
+                    'status' => 403,
+                    'data' => [
+                        'message' => 'يجب مشاهدة ≥ 80% من الفيديو أولاً',
+                        'watched_percent' => $userProgress ? $userProgress->watched_percent : 0,
+                    ],
+                ];
+            }
+
+            // 3. التحقق من اكتمال الإجابة على كافة الأسئلة على مستوى الـ Service
+            $questions = collect($task->questions ?? []);
+            foreach ($questions as $index => $q) {
+                $qId = (string) ($q['id'] ?? $index + 1);
+                $ans = $userAnswers[$qId] ?? (is_numeric($qId) ? ($userAnswers[(int) $qId] ?? null) : null);
+                if (is_null($ans) || (is_string($ans) && trim($ans) === '')) {
+                    return [
+                        'status' => 422,
+                        'data' => [
+                            'message' => 'يجب الإجابة على جميع الأسئلة لتسليم المهمة',
+                        ],
+                    ];
                 }
             }
 

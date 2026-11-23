@@ -27,7 +27,7 @@ class SubmitTaskRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'answers' => ['required', 'array'],
+            'answers' => ['required', 'array', 'max:50'],
         ];
     }
 
@@ -67,8 +67,8 @@ class SubmitTaskRequest extends FormRequest
                 $ans = $userAnswers[$qId] ?? $userAnswers[(int) $qId] ?? null;
 
                 // Zero-Index Option Guard & Blank Protection:
-                // Answer must not be null, must not be empty string, and must be numeric or valid string
-                if (is_null($ans) || $ans === '' || (! is_numeric($ans) && ! is_string($ans))) {
+                // Answer must not be null, must not be whitespace-only, and must be numeric or non-empty string
+                if (is_null($ans) || (is_string($ans) && trim($ans) === '') || (! is_numeric($ans) && ! is_string($ans))) {
                     $missing = true;
                     break;
                 }
