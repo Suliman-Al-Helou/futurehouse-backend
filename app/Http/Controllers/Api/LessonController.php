@@ -29,6 +29,6 @@ class LessonController extends Controller
 
         Gate::authorize('watchLesson', [$course, $lesson]);
 
-        return response()->json(new LessonResource($lesson));
+        return response()->json((new LessonResource($lesson))->singleLesson());
     }
 }

@@ -61,6 +61,17 @@ class VideoDeliveryManager
             ? $videoId
             : sprintf('https://%s/%s/playlist.m3u8', config('services.video.bunny.hostname', 'video.bunnycdn.com'), $videoId);
 
+        // Generate Bunny Token Authentication signature when security key is configured
+        $tokenKey = config('services.video.bunny.token_key');
+        if ($tokenKey && ! str_contains($url, 'token=')) {
+            $parsedUrl = parse_url($url);
+            $path = $parsedUrl['path'] ?? "/{$videoId}/playlist.m3u8";
+            $expiresTimestamp = Carbon::parse($expiresAt)->timestamp;
+            $hashable = $tokenKey . $path . $expiresTimestamp;
+            $token = rtrim(strtr(base64_encode(hash('sha256', $hashable, true)), '+/', '-_'), '=');
+            $url .= (str_contains($url, '?') ? '&' : '?') . "token={$token}&expires={$expiresTimestamp}";
+        }
+
         return [
             'provider' => 'hls',
             'url' => $url,

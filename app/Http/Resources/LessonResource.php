@@ -16,18 +16,34 @@ use Illuminate\Http\Resources\Json\JsonResource;
  */
 class LessonResource extends JsonResource
 {
+    protected bool $isSingleLesson = false;
+
+    /**
+     * Mark this resource instance explicitly as a single lesson request context.
+     */
+    public function singleLesson(bool $value = true): self
+    {
+        $this->isSingleLesson = $value;
+
+        return $this;
+    }
+
     /** Lesson shape consumed by CourseSectionsModal, Curriculum, and LessonController. */
     public function toArray(Request $request): array
     {
         /** @var VideoDeliveryManager $videoManager */
         $videoManager = app(VideoDeliveryManager::class);
 
-        // Determine if this is a single lesson request or general curriculum listing
-        $routeLesson = $request->route('lesson');
-        $singleLessonId = $routeLesson instanceof Lesson ? $routeLesson->id : $routeLesson;
+        // Explicit single lesson flag takes precedence over route inspection fallback
+        $isSingleLessonRequest = $this->isSingleLesson
+            || (bool) ($this->additional['is_single_lesson'] ?? false);
 
-        $isSingleLessonRequest = (bool) ($this->additional['is_single_lesson'] ?? false)
-            || ($singleLessonId !== null && ((int) $singleLessonId === (int) $this->id));
+        if (! $isSingleLessonRequest) {
+            $routeLesson = $request->route('lesson');
+            $singleLessonId = $routeLesson instanceof Lesson ? $routeLesson->id : $routeLesson;
+            $isSingleLessonRequest = $singleLessonId !== null && ((int) $singleLessonId === (int) $this->id);
+        }
+
         $enforceGate = ! $isSingleLessonRequest;
 
         $playback = $videoManager->resolvePlayback(
