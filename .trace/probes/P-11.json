@@ -1,7 +1,9 @@
 {
     "probe": "P-11",
     "decision_row": "D-11",
-    "note": "Admin user cannot be linked as instructor",
+    "recorded_at": "2026-11-23T08:21:35Z",
+    "stamp": "a69dbb271347f88eb5d78e2466d08f997a05ace239014cba592b8fb406d0cf8f",
+    "note": "",
     "observed": {
         "status": 422,
         "errors": {

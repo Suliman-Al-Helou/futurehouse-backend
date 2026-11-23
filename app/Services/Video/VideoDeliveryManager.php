@@ -21,11 +21,9 @@ class VideoDeliveryManager
             return null;
         }
 
-        // When gate is enforced (e.g. in curriculum listings), only preview lessons or authorized managers get playback
+        // When gate is enforced (e.g. in curriculum listings), strictly return null for non-preview lessons
         if ($enforceGate && ! $lesson->is_preview) {
-            if (! $user || ! $this->canManageLesson($lesson, $user)) {
-                return null;
-            }
+            return null;
         }
 
         $provider = $lesson->video_provider ?: config('services.video.default', 'youtube');

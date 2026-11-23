@@ -1,7 +1,9 @@
 {
     "probe": "P-02",
     "decision_row": "D-02",
-    "note": "Student caller forbidden",
+    "recorded_at": "2026-11-23T08:21:35Z",
+    "stamp": "d85fd2d58a6bb0589ad7fe243442e1c6c8eb3723e7ccbc4ab45f37d6afb2cb57",
+    "note": "",
     "observed": {
         "status": 403,
         "message": "ليس لديك الصلاحية للوصول إلى هذا المورد"

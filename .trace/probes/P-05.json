@@ -1,11 +1,11 @@
 {
     "probe": "P-05",
     "decision_row": "D-05",
-    "note": "Display-only profile creation",
+    "recorded_at": "2026-11-23T08:21:35Z",
+    "stamp": "eb16522fa65e98bb8660786c3f3521b30c09f77dff08bb3fe14e295e27fedbbd",
+    "note": "",
     "observed": {
         "status": 201,
-        "user_id": null,
-        "is_display_only": true,
-        "user_data": null
+        "is_display_only": true
     }
 }

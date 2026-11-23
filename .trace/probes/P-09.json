@@ -1,7 +1,9 @@
 {
     "probe": "P-09",
     "decision_row": "D-09",
-    "note": "Soft-deleted user rejected with 422",
+    "recorded_at": "2026-11-23T08:21:35Z",
+    "stamp": "475e5857fdeec9f3557aa3d107e5587f2acc5024896b06b1049741b41defac7a",
+    "note": "",
     "observed": {
         "status": 422,
         "errors": {

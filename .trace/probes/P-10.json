@@ -1,7 +1,9 @@
 {
     "probe": "P-10",
     "decision_row": "D-10",
-    "note": "Already linked user rejected with 422 unique error",
+    "recorded_at": "2026-11-23T08:21:35Z",
+    "stamp": "60f609ac777817d41805da51c3cfe878f947f1a9698364c05ea3a92f6bde92a9",
+    "note": "",
     "observed": {
         "status": 422,
         "errors": {
