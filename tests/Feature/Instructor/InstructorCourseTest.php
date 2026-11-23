@@ -285,64 +285,32 @@ class InstructorCourseTest extends TestCase
         ]);
     }
 
-    public function test_updating_price_is_prohibited_and_returns_422(): void
+    public function test_updating_commercial_and_admin_attributes_is_silently_stripped(): void
     {
         Sanctum::actingAs($this->instructorA);
 
+        $originalPrice = $this->courseA1->price;
+        $originalStatus = $this->courseA1->status;
+        $originalIsPublic = $this->courseA1->is_public;
+        $originalInstructorId = $this->courseA1->instructor_id;
+
         $response = $this->putJson("/api/instructor/courses/{$this->courseA1->id}", [
+            'title' => 'عنوان محدث بدون تلاعب بالأسعار',
             'price' => 999.00,
-        ]);
-
-        $response->assertStatus(422)
-            ->assertJsonValidationErrors('price');
-    }
-
-    public function test_updating_youtube_playlist_id_is_prohibited_and_returns_422(): void
-    {
-        Sanctum::actingAs($this->instructorA);
-
-        $response = $this->putJson("/api/instructor/courses/{$this->courseA1->id}", [
             'youtube_playlist_id' => 'PL_NEW_TAMPERED',
-        ]);
-
-        $response->assertStatus(422)
-            ->assertJsonValidationErrors('youtube_playlist_id');
-    }
-
-    public function test_updating_instructor_id_is_prohibited_and_returns_422(): void
-    {
-        Sanctum::actingAs($this->instructorA);
-
-        $response = $this->putJson("/api/instructor/courses/{$this->courseA1->id}", [
             'instructor_id' => $this->instructorB->instructor->id,
-        ]);
-
-        $response->assertStatus(422)
-            ->assertJsonValidationErrors('instructor_id');
-    }
-
-    public function test_updating_is_public_is_prohibited_and_returns_422(): void
-    {
-        Sanctum::actingAs($this->instructorA);
-
-        $response = $this->putJson("/api/instructor/courses/{$this->courseA1->id}", [
             'is_public' => false,
-        ]);
-
-        $response->assertStatus(422)
-            ->assertJsonValidationErrors('is_public');
-    }
-
-    public function test_updating_status_is_prohibited_and_returns_422(): void
-    {
-        Sanctum::actingAs($this->instructorA);
-
-        $response = $this->putJson("/api/instructor/courses/{$this->courseA1->id}", [
             'status' => 'draft',
         ]);
 
-        $response->assertStatus(422)
-            ->assertJsonValidationErrors('status');
+        $response->assertOk()
+            ->assertJsonPath('title', 'عنوان محدث بدون تلاعب بالأسعار');
+
+        $this->courseA1->refresh();
+        $this->assertEquals($originalPrice, $this->courseA1->price);
+        $this->assertEquals($originalStatus, $this->courseA1->status);
+        $this->assertEquals($originalIsPublic, $this->courseA1->is_public);
+        $this->assertEquals($originalInstructorId, $this->courseA1->instructor_id);
     }
 
     public function test_admin_can_update_course_via_instructor_course_update(): void

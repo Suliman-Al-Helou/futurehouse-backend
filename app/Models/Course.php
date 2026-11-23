@@ -148,6 +148,11 @@ class Course extends Model
         return $this->hasMany(ZoomMeeting::class);
     }
 
+    public function activityLogs(): HasMany
+    {
+        return $this->hasMany(CourseActivityLog::class);
+    }
+
     public function orderedLessons()
     {
         return $this->lessons()

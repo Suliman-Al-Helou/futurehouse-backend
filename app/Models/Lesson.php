@@ -14,6 +14,8 @@ class Lesson extends Model
 {
     use ClearsCacheOnChange, HasFactory;
 
+    public const WATCH_PERCENT_THRESHOLD = 80;
+
     public static function flushCache(): void
     {
         ContentCache::forgetCourses();
@@ -84,6 +86,15 @@ class Lesson extends Model
             ->where('user_id', $user->id)
             ->where('completed', true)
             ->exists();
+    }
+
+    public function isWatchUnlockedFor(User $user): bool
+    {
+        $progress = $this->progress()
+            ->where('user_id', $user->id)
+            ->first();
+
+        return $progress !== null && (float) $progress->watched_percent >= self::WATCH_PERCENT_THRESHOLD;
     }
 
     public function isUnlockedFor(User $user): bool

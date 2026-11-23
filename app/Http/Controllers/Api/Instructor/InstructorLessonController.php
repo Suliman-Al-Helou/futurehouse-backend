@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Api\Instructor;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\InstructorLessonRequest;
 use App\Http\Resources\LessonResource;
+use App\Models\CourseActivityLog;
 use App\Models\Lesson;
 use App\Models\Section;
 use Illuminate\Http\JsonResponse;
@@ -29,6 +30,14 @@ class InstructorLessonController extends Controller
 
         $lesson = $section->lessons()->create($request->validated());
 
+        CourseActivityLog::create([
+            'course_id' => $course->id,
+            'user_id' => $request->user()?->id,
+            'action' => 'lesson_created',
+            'changes' => ['title' => ['old' => null, 'new' => $lesson->title]],
+            'ip_address' => $request->ip(),
+        ]);
+
         return response()->json(new LessonResource($lesson), 201);
     }
 
@@ -44,7 +53,16 @@ class InstructorLessonController extends Controller
 
         Gate::authorize('manageAsInstructor', $course);
 
+        $oldTitle = $lesson->title;
         $lesson->update($request->validated());
+
+        CourseActivityLog::create([
+            'course_id' => $course->id,
+            'user_id' => $request->user()?->id,
+            'action' => 'lesson_updated',
+            'changes' => ['title' => ['old' => $oldTitle, 'new' => $lesson->title]],
+            'ip_address' => $request->ip(),
+        ]);
 
         return response()->json(new LessonResource($lesson));
     }
@@ -66,7 +84,16 @@ class InstructorLessonController extends Controller
             abort(422, 'Cannot delete a lesson with recorded student progress.');
         }
 
+        $title = $lesson->title;
         $lesson->delete();
+
+        CourseActivityLog::create([
+            'course_id' => $course->id,
+            'user_id' => request()->user()?->id,
+            'action' => 'lesson_deleted',
+            'changes' => ['title' => ['old' => $title, 'new' => null]],
+            'ip_address' => request()->ip(),
+        ]);
 
         return response()->noContent();
     }
