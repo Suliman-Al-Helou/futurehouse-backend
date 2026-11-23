@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\InstructorSectionRequest;
 use App\Http\Resources\SectionResource;
 use App\Models\Course;
+use App\Models\CourseActivityLog;
 use App\Models\Section;
 use App\Services\CourseService;
 use Illuminate\Http\JsonResponse;
@@ -43,6 +44,14 @@ class InstructorSectionController extends Controller
 
         $section = $this->courseService->addSection($course, $request->validated());
 
+        CourseActivityLog::create([
+            'course_id' => $course->id,
+            'user_id' => $request->user()?->id,
+            'action' => 'section_created',
+            'changes' => ['title' => ['old' => null, 'new' => $section->title]],
+            'ip_address' => $request->ip(),
+        ]);
+
         return response()->json(new SectionResource($section), 201);
     }
 
@@ -58,7 +67,16 @@ class InstructorSectionController extends Controller
 
         Gate::authorize('manageAsInstructor', $course);
 
+        $oldTitle = $section->title;
         $section->update($request->validated());
+
+        CourseActivityLog::create([
+            'course_id' => $course->id,
+            'user_id' => $request->user()?->id,
+            'action' => 'section_updated',
+            'changes' => ['title' => ['old' => $oldTitle, 'new' => $section->title]],
+            'ip_address' => $request->ip(),
+        ]);
 
         return response()->json(new SectionResource($section));
     }
@@ -84,7 +102,16 @@ class InstructorSectionController extends Controller
             abort(422, 'Cannot delete a section with recorded student progress.');
         }
 
+        $title = $section->title;
         $section->delete();
+
+        CourseActivityLog::create([
+            'course_id' => $course->id,
+            'user_id' => request()->user()?->id,
+            'action' => 'section_deleted',
+            'changes' => ['title' => ['old' => $title, 'new' => null]],
+            'ip_address' => request()->ip(),
+        ]);
 
         return response()->noContent();
     }

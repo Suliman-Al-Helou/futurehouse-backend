@@ -21,16 +21,16 @@ class InstructorCourseController extends Controller
     ) {}
 
     /**
-     * Returns courses scoped to the authenticated instructor, or all courses for administrators.
+     * Lists courses assigned to the authenticated instructor or all courses for administrators.
      */
     public function index(Request $request): JsonResponse
     {
         /** @var User $user */
         $user = $request->user();
 
-        if ($user->isAdmin()) {
-            $query = Course::query();
+        $query = Course::query()->with('instructor');
 
+        if ($user->isAdmin()) {
             if ($request->boolean('managed_by_me')) {
                 // Admin Fallback Custody: unassigned courses or courses assigned to admin's instructor profile
                 $instructorId = $user->instructor?->id;
@@ -41,35 +41,33 @@ class InstructorCourseController extends Controller
                     }
                 });
             }
+        } else {
+            $instructorId = $user->instructor?->id;
 
-            $courses = $query->with('instructor')->get();
+            // Safe fallback: if user has no linked instructor profile, return empty list cleanly
+            if ($instructorId === null) {
+                return response()->json([
+                    'data' => [],
+                    'courses' => [],
+                ]);
+            }
 
-            return response()->json([
-                'data' => CourseInstructorResource::collection($courses),
-            ]);
+            $query->where('instructor_id', $instructorId);
         }
 
-        $instructor = $user->instructor;
-
-        if (! $instructor) {
-            return response()->json([
-                'data' => [],
-            ]);
-        }
-
-        $courses = Course::where('instructor_id', $instructor->id)
-            ->with('instructor')
-            ->get();
+        $courses = $query->latest()->get();
+        $resourceCollection = CourseInstructorResource::collection($courses);
 
         return response()->json([
-            'data' => CourseInstructorResource::collection($courses),
+            'data' => $resourceCollection,
+            'courses' => $resourceCollection,
         ]);
     }
 
     /**
-     * Returns assigned course details, strictly authorized via CoursePolicy::manageAsInstructor.
+     * Shows course educational details, strictly authorized via CoursePolicy::manageAsInstructor.
      */
-    public function show(Request $request, Course $course): JsonResponse
+    public function show(Course $course): JsonResponse
     {
         Gate::authorize('manageAsInstructor', $course);
 
