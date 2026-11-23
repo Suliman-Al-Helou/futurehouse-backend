@@ -222,4 +222,106 @@ class InstructorCourseTest extends TestCase
         $responseB = $this->getJson("/api/instructor/courses/{$this->courseB1->id}");
         $responseB->assertOk();
     }
+
+    public function test_unauthenticated_user_cannot_update_course(): void
+    {
+        app('auth')->forgetGuards();
+
+        $response = $this->putJson("/api/instructor/courses/{$this->courseA1->id}", [
+            'title' => 'عنوان محدث بدون مصادقة',
+        ]);
+
+        $response->assertStatus(401);
+    }
+
+    public function test_student_cannot_update_course(): void
+    {
+        $student = User::factory()->student()->create();
+        Sanctum::actingAs($student);
+
+        $response = $this->putJson("/api/instructor/courses/{$this->courseA1->id}", [
+            'title' => 'محاولة طالب لتعديل كورس',
+        ]);
+
+        $response->assertStatus(403);
+    }
+
+    public function test_cross_tenant_update_attempt_fails_with_403_even_with_empty_or_invalid_payload(): void
+    {
+        Sanctum::actingAs($this->instructorA);
+
+        // Instructor A attempts to update Instructor B's course with an empty payload
+        $response = $this->putJson("/api/instructor/courses/{$this->courseB1->id}", []);
+
+        $response->assertStatus(403);
+    }
+
+    public function test_assigned_instructor_can_update_course_educational_metadata(): void
+    {
+        Sanctum::actingAs($this->instructorA);
+
+        $payload = [
+            'title' => 'كورس بايثون المتقدم المحدث 2026',
+            'description' => 'دورة تدريبية مكثفة محدثة في لغة بايثون',
+            'level' => 'advanced',
+            'requirements' => ['إتقان أساسيات البرمجة'],
+            'target_audience' => ['مهندسو النظم الموزعة'],
+            'what_you_learn' => ['بناء واجهات برمجية آمنة وعالية الأداء'],
+            'cover_image' => 'https://example.com/updated-cover.jpg',
+        ];
+
+        $response = $this->putJson("/api/instructor/courses/{$this->courseA1->id}", $payload);
+
+        $response->assertOk()
+            ->assertJsonPath('title', $payload['title'])
+            ->assertJsonPath('description', $payload['description'])
+            ->assertJsonPath('level', 'advanced');
+
+        $this->assertDatabaseHas('courses', [
+            'id' => $this->courseA1->id,
+            'title' => $payload['title'],
+            'level' => 'advanced',
+            'cover_image' => $payload['cover_image'],
+        ]);
+    }
+
+    public function test_updating_commercial_and_admin_attributes_is_silently_stripped(): void
+    {
+        Sanctum::actingAs($this->instructorA);
+
+        $originalPrice = $this->courseA1->price;
+        $originalStatus = $this->courseA1->status;
+        $originalIsPublic = $this->courseA1->is_public;
+        $originalInstructorId = $this->courseA1->instructor_id;
+
+        $response = $this->putJson("/api/instructor/courses/{$this->courseA1->id}", [
+            'title' => 'عنوان محدث بدون تلاعب بالأسعار',
+            'price' => 999.00,
+            'youtube_playlist_id' => 'PL_NEW_TAMPERED',
+            'instructor_id' => $this->instructorB->instructor->id,
+            'is_public' => false,
+            'status' => 'draft',
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('title', 'عنوان محدث بدون تلاعب بالأسعار');
+
+        $this->courseA1->refresh();
+        $this->assertEquals($originalPrice, $this->courseA1->price);
+        $this->assertEquals($originalStatus, $this->courseA1->status);
+        $this->assertEquals($originalIsPublic, $this->courseA1->is_public);
+        $this->assertEquals($originalInstructorId, $this->courseA1->instructor_id);
+    }
+
+    public function test_admin_can_update_course_via_instructor_course_update(): void
+    {
+        Sanctum::actingAs($this->admin);
+
+        $response = $this->putJson("/api/instructor/courses/{$this->courseA1->id}", [
+            'title' => 'تعديل إداري للعنوان التعليمي',
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('title', 'تعديل إداري للعنوان التعليمي');
+    }
 }
