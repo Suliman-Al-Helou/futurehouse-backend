@@ -50,6 +50,8 @@ class CourseController extends Controller
     {
         abort_if($course->status === 'draft', 404);
 
-        return new CourseDetailResource($course->loadPublicDetails($request->user()));
+        $user = auth('sanctum')->user() ?? $request->user();
+
+        return new CourseDetailResource($course->loadPublicDetails($user));
     }
 }

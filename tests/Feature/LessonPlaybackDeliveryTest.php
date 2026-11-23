@@ -232,4 +232,25 @@ class LessonPlaybackDeliveryTest extends TestCase
         $adminRes->assertOk();
         $adminRes->assertJsonPath('is_published', false);
     }
+
+    /**
+     * Test 5: Authenticated instructor sees draft lessons in public course curriculum details.
+     */
+    public function test_authenticated_instructor_sees_draft_lessons_in_course_curriculum(): void
+    {
+        // Public visitor does not see draft lesson
+        $guestRes = $this->getJson("/api/courses/{$this->course->id}");
+        $guestRes->assertOk();
+        $guestLessonIds = collect($guestRes->json('sections.0.lessons') ?? $guestRes->json('data.sections.0.lessons'))
+            ->pluck('id')->all();
+        $this->assertNotContains($this->draftLesson->id, $guestLessonIds);
+
+        // Authenticated course instructor sees draft lesson
+        Sanctum::actingAs($this->instructorUser);
+        $instructorRes = $this->getJson("/api/courses/{$this->course->id}");
+        $instructorRes->assertOk();
+        $instructorLessonIds = collect($instructorRes->json('sections.0.lessons') ?? $instructorRes->json('data.sections.0.lessons'))
+            ->pluck('id')->all();
+        $this->assertContains($this->draftLesson->id, $instructorLessonIds);
+    }
 }

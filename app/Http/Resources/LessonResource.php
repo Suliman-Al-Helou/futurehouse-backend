@@ -34,17 +34,15 @@ class LessonResource extends JsonResource
         /** @var VideoDeliveryManager $videoManager */
         $videoManager = app(VideoDeliveryManager::class);
 
-        // Explicit single lesson flag takes precedence over route inspection fallback
+        // Enforce gate strictly for public course curriculum listings (e.g. GET /api/courses/{course})
+        // Individual lesson endpoints (show, store, update) do NOT enforce gate
+        $isPublicCurriculum = (bool) ($this->additional['enforce_gate'] ?? false)
+            || ($request->is('api/courses/*') && ! $request->is('api/courses/*/progress*') && ! $request->is('api/courses/*/enroll*'));
         $isSingleLessonRequest = $this->isSingleLesson
-            || (bool) ($this->additional['is_single_lesson'] ?? false);
+            || (bool) ($this->additional['is_single_lesson'] ?? false)
+            || $request->is('api/lessons/*');
 
-        if (! $isSingleLessonRequest) {
-            $routeLesson = $request->route('lesson');
-            $singleLessonId = $routeLesson instanceof Lesson ? $routeLesson->id : $routeLesson;
-            $isSingleLessonRequest = $singleLessonId !== null && ((int) $singleLessonId === (int) $this->id);
-        }
-
-        $enforceGate = ! $isSingleLessonRequest;
+        $enforceGate = $isPublicCurriculum && ! $isSingleLessonRequest;
 
         $playback = $videoManager->resolvePlayback(
             $this->resource,
