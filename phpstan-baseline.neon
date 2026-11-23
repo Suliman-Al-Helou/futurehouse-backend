@@ -1,12 +1,6 @@
 parameters:
 	ignoreErrors:
 		-
-			message: '#^Relation ''instructor'' is not found in App\\Models\\Course model\.$#'
-			identifier: larastan.relationExistence
-			count: 3
-			path: app/Http/Controllers/Api/Admin/AdminCourseController.php
-
-		-
 			message: '#^If condition is always true\.$#'
 			identifier: if.alwaysTrue
 			count: 1
@@ -41,18 +35,6 @@ parameters:
 			identifier: larastan.relationExistence
 			count: 2
 			path: app/Http/Controllers/Api/Admin/EnrollmentController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Course\:\:\$sections\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Api/Admin/SectionController.php
-
-		-
-			message: '#^Relation ''sections'' is not found in App\\Models\\Course model\.$#'
-			identifier: larastan.relationExistence
-			count: 1
-			path: app/Http/Controllers/Api/Admin/SectionController.php
 
 		-
 			message: '#^Relation ''enrollments'' is not found in App\\Models\\User model\.$#'
@@ -91,12 +73,6 @@ parameters:
 			path: app/Http/Controllers/Api/ProgressController.php
 
 		-
-			message: '#^Relation ''section'' is not found in App\\Models\\Lesson model\.$#'
-			identifier: larastan.relationExistence
-			count: 1
-			path: app/Http/Controllers/Api/ProgressController.php
-
-		-
 			message: '#^Using nullsafe property access "\?\-\>completed" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 1
@@ -115,15 +91,9 @@ parameters:
 			path: app/Http/Controllers/Api/ProgressController.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\Lesson\:\:\$task\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Http/Controllers/Api/TaskController.php
-
-		-
-			message: '#^Relation ''task'' is not found in App\\Models\\Lesson model\.$#'
-			identifier: larastan.relationExistence
-			count: 2
+			message: '#^Negated boolean expression is always false\.$#'
+			identifier: booleanNot.alwaysFalse
+			count: 1
 			path: app/Http/Controllers/Api/TaskController.php
 
 		-
@@ -359,6 +329,24 @@ parameters:
 			identifier: property.notFound
 			count: 1
 			path: app/Http/Resources/CourseDetailResource.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CourseInstructorProfileResource.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CourseInstructorProfileResource.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Resources/CourseInstructorProfileResource.php
 
 		-
 			message: '#^Access to an undefined property App\\Http\\Resources\\CourseResource\:\:\$cover_image\.$#'
@@ -823,34 +811,10 @@ parameters:
 			path: app/Jobs/UploadVideoToYouTubeJob.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\Course\:\:\$instructor\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Models/Course.php
-
-		-
 			message: '#^Relation ''enrollments'' is not found in App\\Models\\Course model\.$#'
 			identifier: larastan.relationExistence
 			count: 1
 			path: app/Models/Course.php
-
-		-
-			message: '#^Relation ''instructor'' is not found in App\\Models\\Course model\.$#'
-			identifier: larastan.relationExistence
-			count: 1
-			path: app/Models/Course.php
-
-		-
-			message: '#^Relation ''sections'' is not found in App\\Models\\Course model\.$#'
-			identifier: larastan.relationExistence
-			count: 1
-			path: app/Models/Course.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Lesson\:\:\$section\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Models/Lesson.php
 
 		-
 			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\:\:role\(\)\.$#'

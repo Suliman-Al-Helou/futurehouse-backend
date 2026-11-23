@@ -70,6 +70,39 @@ final class InstructorService
         ContentCache::forgetInstructors();
     }
 
+    /** Bootstraps a skeleton instructor profile for an instructor user if not present. */
+    public function bootstrapSkeletonForUser(User $user): ?Instructor
+    {
+        if (! $user->exists || ! $user->hasRole('instructor')) {
+            return null;
+        }
+
+        $instructor = Instructor::firstOrCreate(
+            ['user_id' => $user->id],
+            ['name' => $user->name]
+        );
+
+        ContentCache::forgetInstructors();
+
+        return $instructor;
+    }
+
+    /** Updates personal dossier and atomically updates users.name if changed. */
+    public function updateProfile(User $user, Instructor $instructor, array $data): Instructor
+    {
+        DB::transaction(function () use ($instructor, $user, $data): void {
+            if (isset($data['name'])) {
+                $user->update(['name' => $data['name']]);
+            }
+
+            $instructor->update($data);
+        });
+
+        ContentCache::forgetInstructors();
+
+        return $instructor->fresh()->load('user');
+    }
+
     /** null = leave assignments untouched; [] = unassign all. */
     private function syncCourses(Instructor $instructor, ?array $courseIds): void
     {

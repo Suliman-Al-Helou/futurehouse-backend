@@ -6,6 +6,9 @@ use App\Models\Concerns\ClearsCacheOnChange;
 use App\Support\ContentCache;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Lesson extends Model
 {
@@ -28,20 +31,26 @@ class Lesson extends Model
         'order' => 'integer',
     ];
 
-    // الدرس ينتمي لفصل
-    public function section()
+    /**
+     * @return BelongsTo<Section, $this>
+     */
+    public function section(): BelongsTo
     {
         return $this->belongsTo(Section::class);
     }
 
-    // الدرس له مهمة واحدة
-    public function task()
+    /**
+     * @return HasOne<Task, $this>
+     */
+    public function task(): HasOne
     {
         return $this->hasOne(Task::class);
     }
 
-    // تقدم المستخدمين في هذا الدرس
-    public function progress()
+    /**
+     * @return HasMany<UserLessonProgress, $this>
+     */
+    public function progress(): HasMany
     {
         return $this->hasMany(UserLessonProgress::class);
     }

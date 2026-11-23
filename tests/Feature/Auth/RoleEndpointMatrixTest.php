@@ -117,6 +117,20 @@ class RoleEndpointMatrixTest extends TestCase
             'GET api/admin/youtube/auth-url' => ['GET', 'api/admin/youtube/auth-url', 401, 403, true],
             'POST api/admin/youtube/callback' => ['POST', 'api/admin/youtube/callback', 401, 403, true],
             'POST api/admin/youtube/disconnect' => ['POST', 'api/admin/youtube/disconnect', 401, 403, true],
+
+            // ─── Instructor Endpoints ─────────────────────────────────────
+            'GET api/instructor/profile' => ['GET', 'api/instructor/profile', 401, 403, true],
+            'PUT api/instructor/profile' => ['PUT', 'api/instructor/profile', 401, 403, true],
+            'GET api/instructor/courses' => ['GET', 'api/instructor/courses', 401, 403, true],
+            'GET api/instructor/courses/{course}' => ['GET', 'api/instructor/courses/{course}', 401, 403, true],
+            'PUT api/instructor/courses/{course}' => ['PUT', 'api/instructor/courses/{course}', 401, 403, true],
+            'GET api/instructor/courses/{course}/sections' => ['GET', 'api/instructor/courses/{course}/sections', 401, 403, true],
+            'POST api/instructor/courses/{course}/sections' => ['POST', 'api/instructor/courses/{course}/sections', 401, 403, true],
+            'PUT api/instructor/sections/{section}' => ['PUT', 'api/instructor/sections/{section}', 401, 403, true],
+            'DELETE api/instructor/sections/{section}' => ['DELETE', 'api/instructor/sections/{section}', 401, 403, true],
+            'POST api/instructor/sections/{section}/lessons' => ['POST', 'api/instructor/sections/{section}/lessons', 401, 403, true],
+            'PUT api/instructor/lessons/{lesson}' => ['PUT', 'api/instructor/lessons/{lesson}', 401, 403, true],
+            'DELETE api/instructor/lessons/{lesson}' => ['DELETE', 'api/instructor/lessons/{lesson}', 401, 403, true],
         ];
     }
 

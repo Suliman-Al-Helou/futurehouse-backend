@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Notifications\ResetPasswordNotification;
+use App\Services\InstructorService;
 use App\Support\ContentCache;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -16,7 +17,12 @@ use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, HasRoles, Notifiable, SoftDeletes;
+    use HasApiTokens, HasFactory;
+    use HasRoles {
+        assignRole as traitAssignRole;
+        syncRoles as traitSyncRoles;
+    }
+    use Notifiable, SoftDeletes;
 
     protected $fillable = ['name', 'email', 'password',   'google_id'];
 
@@ -90,8 +96,32 @@ class User extends Authenticatable
         return $this->hasRole('instructor');
     }
 
+    public function assignRole(...$roles): static
+    {
+        $this->traitAssignRole(...$roles);
+
+        if ($this->exists && $this->hasRole('instructor') && ! $this->instructor()->exists()) {
+            app(InstructorService::class)->bootstrapSkeletonForUser($this);
+        }
+
+        return $this;
+    }
+
+    public function syncRoles(...$roles): static
+    {
+        $this->traitSyncRoles(...$roles);
+
+        if ($this->exists && $this->hasRole('instructor') && ! $this->instructor()->exists()) {
+            app(InstructorService::class)->bootstrapSkeletonForUser($this);
+        }
+
+        return $this;
+    }
+
     /**
      * The instructor profile linked to this user account (1 user -> 1 instructor profile).
+     *
+     * @return HasOne<Instructor, $this>
      */
     public function instructor(): HasOne
     {
