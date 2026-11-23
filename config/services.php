@@ -44,4 +44,14 @@ return [
         'client_id' => env('GOOGLE_CLIENT_ID'),
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),
     ],
+
+    'video' => [
+        'default' => env('VIDEO_DEFAULT_PROVIDER', 'youtube'),
+        'bunny' => [
+            'library_id' => env('BUNNY_STREAM_LIBRARY_ID'),
+            'api_key' => env('BUNNY_STREAM_API_KEY'),
+            'token_key' => env('BUNNY_STREAM_TOKEN_KEY'),
+            'hostname' => env('BUNNY_STREAM_HOSTNAME', 'video.bunnycdn.com'),
+        ],
+    ],
 ];
