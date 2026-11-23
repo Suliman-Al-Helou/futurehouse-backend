@@ -107,7 +107,10 @@ class Course extends Model
         return $this->relationLoaded('instructor') ? $this->instructor?->name : null;
     }
 
-    public function sections()
+    /**
+     * @return HasMany<Section, $this>
+     */
+    public function sections(): HasMany
     {
         return $this->hasMany(Section::class)->orderBy('order');
     }
