@@ -43,4 +43,3 @@ class DatabaseSeeder extends Seeder
     }
 }
 // App\Models\User::where('email', 's@gmail.com')->update(['role' => 'admin']);
-

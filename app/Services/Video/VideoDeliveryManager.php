@@ -67,9 +67,9 @@ class VideoDeliveryManager
             $parsedUrl = parse_url($url);
             $path = $parsedUrl['path'] ?? "/{$videoId}/playlist.m3u8";
             $expiresTimestamp = Carbon::parse($expiresAt)->timestamp;
-            $hashable = $tokenKey . $path . $expiresTimestamp;
+            $hashable = $tokenKey.$path.$expiresTimestamp;
             $token = rtrim(strtr(base64_encode(hash('sha256', $hashable, true)), '+/', '-_'), '=');
-            $url .= (str_contains($url, '?') ? '&' : '?') . "token={$token}&expires={$expiresTimestamp}";
+            $url .= (str_contains($url, '?') ? '&' : '?')."token={$token}&expires={$expiresTimestamp}";
         }
 
         return [

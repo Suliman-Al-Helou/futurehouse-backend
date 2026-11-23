@@ -20,14 +20,23 @@ class LessonPlaybackDeliveryTest extends TestCase
     use RefreshDatabase;
 
     private User $student;
+
     private User $instructorUser;
+
     private User $adminUser;
+
     private Instructor $instructor;
+
     private Course $course;
+
     private Section $section;
+
     private Lesson $previewLesson;
+
     private Lesson $lockedYoutubeLesson;
+
     private Lesson $lockedHlsLesson;
+
     private Lesson $draftLesson;
 
     protected function setUp(): void

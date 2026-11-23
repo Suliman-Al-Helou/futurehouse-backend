@@ -6,7 +6,6 @@ namespace Tests\Feature\Admin;
 
 use App\Models\Instructor;
 use App\Models\User;
-use App\Services\InstructorService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Laravel\Sanctum\Sanctum;

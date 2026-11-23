@@ -52,7 +52,20 @@ class User extends Authenticatable
 
     protected function role(): Attribute
     {
-        return Attribute::get(fn ($value) => $this->getRoleNames()->first() ?? $value ?? 'student');
+        return Attribute::get(function ($value) {
+            $roles = $this->getRoleNames();
+            if ($roles->contains('admin')) {
+                return 'admin';
+            }
+            if ($roles->contains('instructor')) {
+                return 'instructor';
+            }
+            if ($roles->contains('student')) {
+                return 'student';
+            }
+
+            return $roles->first() ?? $value ?? 'student';
+        });
     }
 
     // D5: no remember_token column; an empty name makes Eloquent skip it.
