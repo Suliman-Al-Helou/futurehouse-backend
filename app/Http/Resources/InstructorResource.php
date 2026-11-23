@@ -40,7 +40,7 @@ class InstructorResource extends JsonResource
             'bio' => $this->bio,
             'avatar_url' => $this->avatar_url,
             'cover_url' => $this->cover_url,
-            'specializations' => $this->specializations ?? [],
+            'specializations' => $this->specializations,
             'years_experience' => $this->years_experience,
             'rating' => $this->rating,
             'total_reviews' => $this->total_reviews,

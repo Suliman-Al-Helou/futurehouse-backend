@@ -58,5 +58,7 @@ Before declaring any task complete, you MUST verify:
 4. **Strict Blank & Whitespace Guard**: When validating string inputs, whitespace-only strings (`"   "`) must be strictly treated as blank/invalid.
 5. **No Magic Numbers**: Centralize domain-wide numerical thresholds (e.g. `WATCH_PERCENT_THRESHOLD = 80`) as constants on their respective Models.
 6. **Pre-Commit Conflict Hygiene**: Always run `git diff --check` to ensure no merge conflict markers (`<<<<<<<`) leak into the repository.
-7. **Symmetric Testing**: Every validation rule must be tested on BOTH Create (`POST`) and Update (`PUT/PATCH`) endpoints.
-8. **Self-Review**: Run `git diff` and review your own changes for security flaws before reporting completion.
+7. **API Resource Gating Isolation**: API Resources must remain pure presenters. Content gating/masking (e.g. redacting `video_id` or `playback`) must be strictly scoped to public catalog/syllabus listings (`api/courses/*`), and must NEVER default-mask responses on single-resource creation (`POST`) or mutation (`PUT/PATCH`) endpoints.
+8. **Hybrid Public/Authenticated Resolution**: On public endpoints where responses adapt based on authentication (e.g., instructors previewing unreleased draft lessons in a public catalog), always resolve user identity via `auth('sanctum')->user() ?? $request->user()` to support optional Bearer tokens outside `auth:sanctum` middleware.
+9. **Symmetric Testing**: Every validation rule must be tested on BOTH Create (`POST`) and Update (`PUT/PATCH`) endpoints.
+10. **Self-Review**: Run `git diff` and review your own changes for security flaws before reporting completion.
