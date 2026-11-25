@@ -353,6 +353,28 @@ class InstructorAuthorizationTest extends TestCase
         ]);
     }
 
+    public function test_deleting_section_containing_uncompleted_lessons_fails_with_422(): void
+    {
+        Sanctum::actingAs($this->instructorA);
+
+        $section = Section::factory()->create([
+            'course_id' => $this->courseA->id,
+            'title' => 'فصل يحتوي على دروس غير مكتملة',
+        ]);
+        \App\Models\Lesson::factory()->create([
+            'section_id' => $section->id,
+            'title' => 'درس نشط بدون تقدم بعد',
+        ]);
+
+        $response = $this->deleteJson("/api/instructor/sections/{$section->id}");
+
+        $response->assertStatus(422);
+
+        $this->assertDatabaseHas('sections', [
+            'id' => $section->id,
+        ]);
+    }
+
     public function test_deleting_unstudied_empty_section_succeeds_with_204(): void
     {
         Sanctum::actingAs($this->instructorA);

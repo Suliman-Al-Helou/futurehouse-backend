@@ -80,30 +80,6 @@ class AdminCourseController extends Controller
     /** Returns YouTube playlist videos for the course. */
     public function youtubeVideos(Course $course, YouTubeService $youtubeService): JsonResponse
     {
-        $playlistId = $course->youtube_playlist_id;
-        if (! $playlistId) {
-            return response()->json([
-                'playlist_id' => null,
-                'connected' => $youtubeService->isConnected(),
-                'videos' => [],
-            ]);
-        }
-
-        $videos = $youtubeService->getPlaylistVideos($playlistId);
-
-        $existingVideoIds = $course->lessons()
-            ->whereNotNull('video_id')
-            ->pluck('video_id')
-            ->toArray();
-
-        foreach ($videos as &$video) {
-            $video['is_already_added'] = in_array($video['id'], $existingVideoIds, true);
-        }
-
-        return response()->json([
-            'playlist_id' => $playlistId,
-            'connected' => $youtubeService->isConnected(),
-            'videos' => $videos,
-        ]);
+        return response()->json($youtubeService->getCoursePlaylistVideos($course));
     }
 }

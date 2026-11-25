@@ -93,6 +93,11 @@ class InstructorSectionController extends Controller
 
         Gate::authorize('manageAsInstructor', $course);
 
+        // Empty Section Guard: section must not contain any lessons
+        if ($section->lessons()->exists()) {
+            abort(422, 'لا يمكن حذف قسم يحتوي على دروس. يرجى حذف أو نقل الدروس أولاً.');
+        }
+
         // Curriculum Deletion Integrity Guard:
         $hasCompletedProgress = $section->lessons()
             ->whereHas('progress', fn ($q) => $q->where('completed', true))

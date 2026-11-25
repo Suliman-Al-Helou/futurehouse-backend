@@ -100,32 +100,7 @@ class InstructorCourseController extends Controller
     {
         Gate::authorize('manageAsInstructor', $course);
 
-        $playlistId = $course->youtube_playlist_id;
-        if (! $playlistId) {
-            return response()->json([
-                'playlist_id' => null,
-                'connected' => $youtubeService->isConnected(),
-                'videos' => [],
-            ]);
-        }
-
-        $videos = $youtubeService->getPlaylistVideos($playlistId);
-
-        // Check which videos are already added as lessons
-        $existingVideoIds = $course->lessons()
-            ->whereNotNull('video_id')
-            ->pluck('video_id')
-            ->toArray();
-
-        foreach ($videos as &$video) {
-            $video['is_already_added'] = in_array($video['id'], $existingVideoIds, true);
-        }
-
-        return response()->json([
-            'playlist_id' => $playlistId,
-            'connected' => $youtubeService->isConnected(),
-            'videos' => $videos,
-        ]);
+        return response()->json($youtubeService->getCoursePlaylistVideos($course));
     }
 
     /**

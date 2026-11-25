@@ -340,4 +340,36 @@ class YouTubeService
             return [];
         }
     }
+
+    /**
+     * Returns playlist videos for a course annotated with whether each video is already added.
+     */
+    public function getCoursePlaylistVideos(\App\Models\Course $course): array
+    {
+        $playlistId = $course->youtube_playlist_id;
+        if (! $playlistId) {
+            return [
+                'playlist_id' => null,
+                'connected' => $this->isConnected(),
+                'videos' => [],
+            ];
+        }
+
+        $videos = $this->getPlaylistVideos($playlistId);
+
+        $existingVideoIds = $course->lessons()
+            ->whereNotNull('video_id')
+            ->pluck('video_id')
+            ->toArray();
+
+        foreach ($videos as &$video) {
+            $video['is_already_added'] = in_array($video['id'], $existingVideoIds, true);
+        }
+
+        return [
+            'playlist_id' => $playlistId,
+            'connected' => $this->isConnected(),
+            'videos' => $videos,
+        ];
+    }
 }

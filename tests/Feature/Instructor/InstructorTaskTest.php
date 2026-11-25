@@ -263,6 +263,29 @@ class InstructorTaskTest extends TestCase
     }
 
     /**
+     * Symmetric Test: Validation rejects invalid task update payloads on PUT.
+     */
+    public function test_update_task_validates_required_fields_symmetrically(): void
+    {
+        Task::create([
+            'lesson_id' => $this->lessonA->id,
+            'questions' => [['id' => 'q1', 'question' => 'سؤال أولي']],
+            'pass_percentage' => 70,
+            'max_attempts' => 3,
+        ]);
+
+        Sanctum::actingAs($this->instructorA);
+
+        $response = $this->putJson("/api/instructor/lessons/{$this->lessonA->id}/task", [
+            'pass_percentage' => 150, // Invalid: exceeds 100
+            'max_attempts' => 0,     // Invalid: min 1
+        ]);
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['questions', 'pass_percentage', 'max_attempts']);
+    }
+
+    /**
      * Test 9: Instructor can update existing task.
      */
     public function test_instructor_can_update_task_for_own_lesson(): void
