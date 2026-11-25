@@ -53,18 +53,25 @@ class ImportHlsVideosCommand extends Command
         }
 
         $updated = 0;
-        foreach ($mappings as $youtubeId => $bunnyGuid) {
-            if ($youtubeId === '' || $bunnyGuid === '') {
+        foreach ($mappings as $entry) {
+            $bunnyGuid = $entry['bunny_guid'];
+            if ($bunnyGuid === '' || $bunnyGuid === 'REPLACE_WITH_BUNNY_GUID') {
                 continue;
             }
 
-            $count = Lesson::query()
-                ->where('video_id', $youtubeId)
-                ->update([
-                    'video_provider' => 'hls',
-                    'video_id' => $bunnyGuid,
-                ]);
-            $updated += $count;
+            $query = Lesson::query();
+            if ($entry['lesson_id'] !== null) {
+                $query->where('id', $entry['lesson_id']);
+            } elseif ($entry['youtube_id'] !== '') {
+                $query->where('video_id', $entry['youtube_id']);
+            } else {
+                continue;
+            }
+
+            $updated += $query->update([
+                'video_provider' => 'hls',
+                'video_id' => $bunnyGuid,
+            ]);
         }
 
         $this->info("Updated {$updated} lesson(s) to HLS from mapping.");
@@ -73,17 +80,47 @@ class ImportHlsVideosCommand extends Command
     }
 
     /**
-     * @return array<string, string>|null
+     * @return list<array{lesson_id: int|null, youtube_id: string, bunny_guid: string}>|null
      */
     private function parseJsonMapping(string $path): ?array
     {
         $decoded = json_decode((string) file_get_contents($path), true);
+        if (! is_array($decoded)) {
+            return null;
+        }
 
-        return is_array($decoded) ? array_map('strval', $decoded) : null;
+        // Structured list format: [{"lesson_id": 2, "youtube_id": "...", "bunny_guid": "..."}]
+        if (array_is_list($decoded)) {
+            $entries = [];
+            foreach ($decoded as $item) {
+                if (! is_array($item)) {
+                    continue;
+                }
+                $entries[] = [
+                    'lesson_id' => isset($item['lesson_id']) ? (int) $item['lesson_id'] : null,
+                    'youtube_id' => trim((string) ($item['youtube_id'] ?? '')),
+                    'bunny_guid' => trim((string) ($item['bunny_guid'] ?? '')),
+                ];
+            }
+
+            return $entries;
+        }
+
+        // Flat map format: {"youtube_id": "bunny_guid"}
+        $entries = [];
+        foreach ($decoded as $youtubeId => $bunnyGuid) {
+            $entries[] = [
+                'lesson_id' => null,
+                'youtube_id' => trim((string) $youtubeId),
+                'bunny_guid' => trim((string) $bunnyGuid),
+            ];
+        }
+
+        return $entries;
     }
 
     /**
-     * @return array<string, string>|null
+     * @return list<array{lesson_id: int|null, youtube_id: string, bunny_guid: string}>|null
      */
     private function parseCsvMapping(string $path): ?array
     {
@@ -102,7 +139,11 @@ class ImportHlsVideosCommand extends Command
                 }
             }
             if (count($row) >= 2) {
-                $mappings[trim((string) $row[0])] = trim((string) $row[1]);
+                $mappings[] = [
+                    'lesson_id' => null,
+                    'youtube_id' => trim((string) $row[0]),
+                    'bunny_guid' => trim((string) $row[1]),
+                ];
             }
         }
         fclose($handle);
