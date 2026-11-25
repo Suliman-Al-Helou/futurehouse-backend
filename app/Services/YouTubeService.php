@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Models\Course;
 use App\Models\PlatformSetting;
 use Google\Client as GoogleClient;
 use Google\Http\MediaFileUpload;
@@ -295,5 +296,81 @@ class YouTubeService
         } catch (\Throwable $e) {
             Log::warning("Failed adding video {$videoId} to playlist {$playlistId}: ".$e->getMessage());
         }
+    }
+
+    /** Fetches videos in a given YouTube playlist */
+    public function getPlaylistVideos(string $playlistId): array
+    {
+        try {
+            $client = $this->getAuthenticatedClient();
+            if (! $client) {
+                return [];
+            }
+
+            $youtube = new YouTube($client);
+            $response = $youtube->playlistItems->listPlaylistItems('snippet,contentDetails', [
+                'playlistId' => $playlistId,
+                'maxResults' => 50,
+            ]);
+
+            $videos = [];
+            foreach ($response->getItems() as $item) {
+                $snippet = $item->getSnippet();
+                $videoId = $snippet->getResourceId()?->getVideoId();
+                if (! $videoId) {
+                    continue;
+                }
+
+                $thumbnails = $snippet->getThumbnails();
+                $thumbnailUrl = $thumbnails?->getMedium()?->getUrl()
+                    ?? $thumbnails?->getDefault()?->getUrl()
+                    ?? "https://img.youtube.com/vi/{$videoId}/mqdefault.jpg";
+
+                $videos[] = [
+                    'id' => $videoId,
+                    'title' => $snippet->getTitle() ?? 'بدون عنوان',
+                    'thumbnail' => $thumbnailUrl,
+                    'duration_minutes' => 0,
+                ];
+            }
+
+            return $videos;
+        } catch (\Throwable $e) {
+            Log::error('YouTube getPlaylistVideos failed: '.$e->getMessage());
+
+            return [];
+        }
+    }
+
+    /**
+     * Returns playlist videos for a course annotated with whether each video is already added.
+     */
+    public function getCoursePlaylistVideos(Course $course): array
+    {
+        $playlistId = $course->youtube_playlist_id;
+        if (! $playlistId) {
+            return [
+                'playlist_id' => null,
+                'connected' => $this->isConnected(),
+                'videos' => [],
+            ];
+        }
+
+        $videos = $this->getPlaylistVideos($playlistId);
+
+        $existingVideoIds = $course->lessons()
+            ->whereNotNull('video_id')
+            ->pluck('video_id')
+            ->toArray();
+
+        foreach ($videos as &$video) {
+            $video['is_already_added'] = in_array($video['id'], $existingVideoIds, true);
+        }
+
+        return [
+            'playlist_id' => $playlistId,
+            'connected' => $this->isConnected(),
+            'videos' => $videos,
+        ];
     }
 }

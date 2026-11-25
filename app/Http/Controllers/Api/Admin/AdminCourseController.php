@@ -10,6 +10,7 @@ use App\Http\Requests\UpdateCourseRequest;
 use App\Http\Resources\CourseAdminResource;
 use App\Models\Course;
 use App\Services\CourseService;
+use App\Services\YouTubeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
@@ -74,5 +75,11 @@ class AdminCourseController extends Controller
         }
 
         return response()->noContent();
+    }
+
+    /** Returns YouTube playlist videos for the course. */
+    public function youtubeVideos(Course $course, YouTubeService $youtubeService): JsonResponse
+    {
+        return response()->json($youtubeService->getCoursePlaylistVideos($course));
     }
 }

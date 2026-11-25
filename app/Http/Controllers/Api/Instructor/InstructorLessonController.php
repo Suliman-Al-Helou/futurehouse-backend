@@ -53,16 +53,50 @@ class InstructorLessonController extends Controller
 
         Gate::authorize('manageAsInstructor', $course);
 
-        $oldTitle = $lesson->title;
-        $lesson->update($request->validated());
+        $updatableFields = [
+            'title',
+            'description',
+            'duration',
+            'order',
+            'is_preview',
+            'is_published',
+            'video_id',
+            'video_provider',
+        ];
+        $validated = $request->validated();
+        $before = [];
+        foreach ($updatableFields as $field) {
+            $before[$field] = $lesson->{$field};
+        }
 
-        CourseActivityLog::create([
-            'course_id' => $course->id,
-            'user_id' => $request->user()?->id,
-            'action' => 'lesson_updated',
-            'changes' => ['title' => ['old' => $oldTitle, 'new' => $lesson->title]],
-            'ip_address' => $request->ip(),
-        ]);
+        $lesson->update($validated);
+        $lesson->refresh();
+
+        $diff = [];
+        foreach ($updatableFields as $field) {
+            if (! array_key_exists($field, $validated)) {
+                continue;
+            }
+
+            $oldValue = $before[$field];
+            $newValue = $lesson->{$field};
+            if ($oldValue !== $newValue) {
+                $diff[$field] = [
+                    'old' => $oldValue,
+                    'new' => $newValue,
+                ];
+            }
+        }
+
+        if ($diff !== []) {
+            CourseActivityLog::create([
+                'course_id' => $course->id,
+                'user_id' => $request->user()?->id,
+                'action' => 'lesson_updated',
+                'changes' => $diff,
+                'ip_address' => $request->ip(),
+            ]);
+        }
 
         return response()->json(new LessonResource($lesson));
     }
