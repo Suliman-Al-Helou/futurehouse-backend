@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Video;
 
 use App\Models\Lesson;
+use Illuminate\Support\Facades\Log;
 
 class VideoDeliveryManager
 {
@@ -30,6 +31,15 @@ class VideoDeliveryManager
         }
 
         $provider = $lesson->video_provider ?: config('services.video.default', 'youtube');
+
+        if (app()->isProduction() && ! $lesson->is_preview && $provider !== 'hls') {
+            Log::critical('Blocked non-HLS paid lesson playback in production', [
+                'lesson_id' => $lesson->id,
+                'video_provider' => $provider,
+            ]);
+
+            return null;
+        }
 
         return match ($provider) {
             'hls' => ($this->hlsService ?? app(HlsDeliveryService::class))->resolvePlayback($lesson),

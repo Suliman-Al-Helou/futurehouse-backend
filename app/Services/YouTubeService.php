@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Models\Course;
 use App\Models\PlatformSetting;
 use Google\Client as GoogleClient;
 use Google\Http\MediaFileUpload;
@@ -344,7 +345,7 @@ class YouTubeService
     /**
      * Returns playlist videos for a course annotated with whether each video is already added.
      */
-    public function getCoursePlaylistVideos(\App\Models\Course $course): array
+    public function getCoursePlaylistVideos(Course $course): array
     {
         $playlistId = $course->youtube_playlist_id;
         if (! $playlistId) {

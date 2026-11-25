@@ -12,6 +12,8 @@ use App\Models\Section;
 use App\Models\User;
 use App\Models\UserLessonProgress;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -261,5 +263,219 @@ class LessonPlaybackDeliveryTest extends TestCase
         $instructorLessonIds = collect($instructorRes->json('sections.0.lessons') ?? $instructorRes->json('data.sections.0.lessons'))
             ->pluck('id')->all();
         $this->assertContains($this->draftLesson->id, $instructorLessonIds);
+    }
+
+    /**
+     * Test 6 (TDD - Ticket 01): Signed HLS URL uses 2-hour TTL and Bunny Path-Based token_path without IP binding.
+     */
+    public function test_hls_signed_url_uses_2_hour_ttl_and_bunny_path_based_token_without_ip_binding(): void
+    {
+        config([
+            'services.video.bunny.token_key' => 'secret-bunny-key',
+            'services.video.bunny.hostname' => 'vz-test.b-cdn.net',
+        ]);
+
+        Enrollment::create([
+            'user_id' => $this->student->id,
+            'course_id' => $this->course->id,
+            'status' => 'approved',
+            'enrolled_at' => now(),
+        ]);
+
+        UserLessonProgress::create([
+            'user_id' => $this->student->id,
+            'lesson_id' => $this->previewLesson->id,
+            'completed' => true,
+            'watched_percent' => 100,
+        ]);
+
+        UserLessonProgress::create([
+            'user_id' => $this->student->id,
+            'lesson_id' => $this->lockedYoutubeLesson->id,
+            'completed' => true,
+            'watched_percent' => 100,
+        ]);
+
+        Sanctum::actingAs($this->student);
+
+        $before = now()->timestamp;
+        $response = $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.10'])
+            ->getJson("/api/lessons/{$this->lockedHlsLesson->id}");
+        $after = now()->timestamp;
+
+        $response->assertOk();
+        $url = $response->json('playback.url');
+        $expiresAt = $response->json('playback.expires_at');
+
+        $parts = parse_url($url);
+        parse_str($parts['query'] ?? '', $query);
+
+        $this->assertSame('/bunnystream999/', $query['token_path'] ?? null);
+        $this->assertArrayHasKey('expires', $query);
+        $this->assertArrayHasKey('token', $query);
+
+        $expiresTs = (int) $query['expires'];
+        $this->assertGreaterThanOrEqual($before + 7200, $expiresTs);
+        $this->assertLessThanOrEqual($after + 7200, $expiresTs);
+        $this->assertSame(Carbon::createFromTimestamp($expiresTs)->toIso8601String(), $expiresAt);
+
+        $expectedHashable = 'secret-bunny-key'.'/bunnystream999/'.$expiresTs.'token_path=/bunnystream999/';
+        $expectedToken = rtrim(strtr(base64_encode(hash('sha256', $expectedHashable, true)), '+/', '-_'), '=');
+        $this->assertSame($expectedToken, $query['token']);
+
+        $response2 = $this->withServerVariables(['REMOTE_ADDR' => '198.51.100.42'])
+            ->getJson("/api/lessons/{$this->lockedHlsLesson->id}");
+        $response2->assertOk();
+        parse_str(parse_url($response2->json('playback.url'), PHP_URL_QUERY) ?? '', $query2);
+        $expectedHashable2 = 'secret-bunny-key'.'/bunnystream999/'.(int) $query2['expires'].'token_path=/bunnystream999/';
+        $expectedToken2 = rtrim(strtr(base64_encode(hash('sha256', $expectedHashable2, true)), '+/', '-_'), '=');
+        $this->assertSame($expectedToken2, $query2['token']);
+    }
+
+    /**
+     * Test 7 (TDD - Ticket 01): Signed HLS URL derives directory token_path when video_id is a full URL.
+     */
+    public function test_hls_signing_handles_full_url_video_id_and_derives_directory_token_path(): void
+    {
+        config([
+            'services.video.bunny.token_key' => 'secret-bunny-key',
+        ]);
+
+        $fullUrlLesson = Lesson::create([
+            'section_id' => $this->section->id,
+            'title' => 'Full URL HLS Lesson',
+            'video_id' => 'https://vz-custom.b-cdn.net/guid-123/playlist.m3u8',
+            'video_provider' => 'hls',
+            'duration' => 300,
+            'order' => 5,
+            'is_preview' => true,
+            'is_published' => true,
+        ]);
+
+        Sanctum::actingAs($this->student);
+        $response = $this->getJson("/api/lessons/{$fullUrlLesson->id}");
+        $response->assertOk();
+
+        parse_str(parse_url($response->json('playback.url'), PHP_URL_QUERY) ?? '', $query);
+        $this->assertSame('/guid-123/', $query['token_path'] ?? null);
+        $this->assertArrayHasKey('token', $query);
+        $this->assertArrayHasKey('expires', $query);
+    }
+
+    /**
+     * Test 8 (TDD - Ticket 02): Production environment fails-closed for paid YouTube lessons
+     * while still allowing YouTube previews and HLS paid lessons.
+     */
+    public function test_production_fails_closed_for_paid_youtube_lesson_and_logs_critical_while_allowing_youtube_preview(): void
+    {
+        Enrollment::create([
+            'user_id' => $this->student->id,
+            'course_id' => $this->course->id,
+            'status' => 'approved',
+            'enrolled_at' => now(),
+        ]);
+
+        UserLessonProgress::create([
+            'user_id' => $this->student->id,
+            'lesson_id' => $this->previewLesson->id,
+            'completed' => true,
+            'watched_percent' => 100,
+        ]);
+
+        UserLessonProgress::create([
+            'user_id' => $this->student->id,
+            'lesson_id' => $this->lockedYoutubeLesson->id,
+            'completed' => true,
+            'watched_percent' => 100,
+        ]);
+
+        $originalEnv = $this->app['env'];
+        $this->app['env'] = 'production';
+        Log::spy();
+
+        try {
+            Sanctum::actingAs($this->student);
+
+            // 1. Paid YouTube lesson must fail-closed (null playback, null video_id, critical log)
+            $paidYtRes = $this->getJson("/api/lessons/{$this->lockedYoutubeLesson->id}");
+            $paidYtRes->assertOk();
+            $paidYtRes->assertJsonPath('playback', null);
+            $paidYtRes->assertJsonPath('video_id', null);
+            Log::shouldHaveReceived('critical')->once();
+
+            // 2. Free preview YouTube lesson remains playable
+            $previewRes = $this->getJson("/api/lessons/{$this->previewLesson->id}");
+            $previewRes->assertOk();
+            $previewRes->assertJsonPath('playback.provider', 'youtube');
+            $previewRes->assertJsonPath('playback.source', 'intro123');
+
+            // 3. Paid HLS lesson remains playable
+            $paidHlsRes = $this->getJson("/api/lessons/{$this->lockedHlsLesson->id}");
+            $paidHlsRes->assertOk();
+            $paidHlsRes->assertJsonPath('playback.provider', 'hls');
+        } finally {
+            $this->app['env'] = $originalEnv;
+        }
+    }
+
+    /**
+     * Test 9 (TDD - Ticket 02): Production blocks publishing paid lessons without HLS on both POST and PUT.
+     */
+    public function test_production_blocks_publishing_paid_lesson_without_hls_on_both_create_and_update(): void
+    {
+        $originalEnv = $this->app['env'];
+        $this->app['env'] = 'production';
+
+        try {
+            Sanctum::actingAs($this->instructorUser);
+
+            // 1. POST paid published YouTube lesson -> 422
+            $createBlocked = $this->postJson("/api/instructor/sections/{$this->section->id}/lessons", [
+                'title' => 'Blocked Paid YouTube Lesson',
+                'video_provider' => 'youtube',
+                'video_id' => 'yt-blocked',
+                'is_preview' => false,
+                'is_published' => true,
+            ]);
+            $createBlocked->assertUnprocessable();
+
+            // 2. POST draft YouTube lesson -> 201 (drafts allowed before HLS migration)
+            $createDraft = $this->postJson("/api/instructor/sections/{$this->section->id}/lessons", [
+                'title' => 'Draft YouTube Lesson',
+                'video_provider' => 'youtube',
+                'video_id' => 'yt-draft',
+                'is_preview' => false,
+                'is_published' => false,
+            ]);
+            $createDraft->assertCreated();
+            $draftId = $createDraft->json('id');
+
+            // 3. PUT publishing existing draft without switching to HLS -> 422
+            $updateBlocked = $this->putJson("/api/instructor/lessons/{$draftId}", [
+                'is_published' => true,
+            ]);
+            $updateBlocked->assertUnprocessable();
+
+            // 4. PUT publishing existing draft WITH HLS -> 200
+            $updateAllowed = $this->putJson("/api/instructor/lessons/{$draftId}", [
+                'is_published' => true,
+                'video_provider' => 'hls',
+                'video_id' => 'bunny-guid-1',
+            ]);
+            $updateAllowed->assertOk();
+            $updateAllowed->assertJsonPath('playback.provider', 'hls');
+
+            // 5. POST published free preview on YouTube -> 201
+            $createPreview = $this->postJson("/api/instructor/sections/{$this->section->id}/lessons", [
+                'title' => 'Published YouTube Preview',
+                'video_provider' => 'youtube',
+                'video_id' => 'yt-preview-ok',
+                'is_preview' => true,
+                'is_published' => true,
+            ]);
+            $createPreview->assertCreated();
+        } finally {
+            $this->app['env'] = $originalEnv;
+        }
     }
 }

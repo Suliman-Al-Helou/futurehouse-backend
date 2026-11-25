@@ -143,7 +143,7 @@ class InstructorCourseController extends Controller
                 : 0;
 
             return [
-                'id' => $enrollment->user?->id ?? $enrollment->user_id,
+                'id' => $enrollment->user ? $enrollment->user->id : $enrollment->user_id,
                 'name' => $enrollment->user?->name,
                 'enrolled_at' => $enrollment->enrolled_at?->toISOString(),
                 'completed_lessons_count' => $completedCount,

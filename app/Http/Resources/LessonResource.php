@@ -49,12 +49,15 @@ class LessonResource extends JsonResource
             enforceGate: $enforceGate
         );
 
+        $shouldRedactVideoId = ($enforceGate && ! $this->is_preview)
+            || ($playback === null && ! empty($this->video_id));
+
         return [
             'id' => $this->id,
             'section_id' => $this->section_id,
             'title' => $this->title,
             'description' => $this->description,
-            'video_id' => $enforceGate && ! $this->is_preview ? null : $this->video_id,
+            'video_id' => $shouldRedactVideoId ? null : $this->video_id,
             'video_provider' => $this->video_provider ?? config('services.video.default', 'youtube'),
             'playback' => $playback,
             'duration' => $this->duration,

@@ -361,7 +361,7 @@ class InstructorAuthorizationTest extends TestCase
             'course_id' => $this->courseA->id,
             'title' => 'فصل يحتوي على دروس غير مكتملة',
         ]);
-        \App\Models\Lesson::factory()->create([
+        Lesson::factory()->create([
             'section_id' => $section->id,
             'title' => 'درس نشط بدون تقدم بعد',
         ]);
