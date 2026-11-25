@@ -92,6 +92,7 @@ Route::middleware(['auth:sanctum', 'role:instructor|admin', 'throttle:instructor
         Route::get('/courses', [InstructorCourseController::class, 'index']);
         Route::get('/courses/{course}', [InstructorCourseController::class, 'show']);
         Route::put('/courses/{course}', [InstructorCourseController::class, 'update']);
+        Route::get('/courses/{course}/students', [InstructorCourseController::class, 'students']);
         Route::get('/courses/{course}/youtube-videos', [InstructorCourseController::class, 'youtubeVideos']);
 
         // Curriculum Sections

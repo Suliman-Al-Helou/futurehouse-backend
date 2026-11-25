@@ -9,6 +9,7 @@ use App\Http\Requests\InstructorUpdateCourseRequest;
 use App\Http\Resources\CourseInstructorResource;
 use App\Models\Course;
 use App\Models\User;
+use App\Models\UserLessonProgress;
 use App\Services\CourseService;
 use App\Services\YouTubeService;
 use Illuminate\Http\JsonResponse;
@@ -125,5 +126,57 @@ class InstructorCourseController extends Controller
             'connected' => $youtubeService->isConnected(),
             'videos' => $videos,
         ]);
+    }
+
+    /**
+     * Lists approved enrolled students for the assigned course with bounded pagination and progress.
+     */
+    public function students(Request $request, Course $course): JsonResponse
+    {
+        Gate::authorize('manageAsInstructor', $course);
+
+        $perPage = min(max($request->integer('per_page', 20), 1), 50);
+
+        $lessonIds = $course->lessons()->pluck('lessons.id');
+        $totalLessonsCount = $lessonIds->count();
+
+        $enrollments = $course->enrollments()
+            ->where('status', 'approved')
+            ->with(['user:id,name'])
+            ->latest('enrolled_at')
+            ->paginate($perPage);
+
+        $userIds = $enrollments->getCollection()
+            ->pluck('user_id')
+            ->unique()
+            ->filter();
+
+        $completedCounts = $userIds->isEmpty() || $lessonIds->isEmpty()
+            ? collect()
+            : UserLessonProgress::query()
+                ->whereIn('user_id', $userIds)
+                ->whereIn('lesson_id', $lessonIds)
+                ->where('completed', true)
+                ->selectRaw('user_id, COUNT(*) as completed_count')
+                ->groupBy('user_id')
+                ->pluck('completed_count', 'user_id');
+
+        $enrollments->through(function ($enrollment) use ($completedCounts, $totalLessonsCount): array {
+            $completedCount = (int) ($completedCounts[$enrollment->user_id] ?? 0);
+            $progressPercent = $totalLessonsCount > 0
+                ? (int) round(($completedCount / $totalLessonsCount) * 100)
+                : 0;
+
+            return [
+                'id' => $enrollment->user?->id ?? $enrollment->user_id,
+                'name' => $enrollment->user?->name,
+                'enrolled_at' => $enrollment->enrolled_at?->toISOString(),
+                'completed_lessons_count' => $completedCount,
+                'total_lessons_count' => $totalLessonsCount,
+                'progress_percent' => $progressPercent,
+            ];
+        });
+
+        return response()->json($enrollments);
     }
 }

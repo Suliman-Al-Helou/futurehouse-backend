@@ -82,7 +82,11 @@ class InstructorTaskController extends Controller
 
     private function authorizeLessonCourse(Lesson $lesson): void
     {
-        $course = $lesson->getCourse();
+        $course = $lesson->section?->course;
+        if (! $course) {
+            abort(404, 'الكورس المرتبط بالدرس غير موجود');
+        }
+
         Gate::authorize('manageAsInstructor', $course);
     }
 }
