@@ -141,7 +141,7 @@ class Course extends Model
 
     public function isFree(): bool
     {
-        return (bool) $this->is_public || (float) ($this->price ?? 0) <= 0;
+        return (bool) $this->is_public;
     }
 
     public function videoAssets(): HasMany
