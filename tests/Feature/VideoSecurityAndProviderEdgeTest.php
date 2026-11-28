@@ -25,6 +25,7 @@ class VideoSecurityAndProviderEdgeTest extends TestCase
             'status' => 'published',
             'is_public' => false,
             'is_free' => false,
+            'price' => 99,
         ]);
         $section = Section::create([
             'course_id' => $course->id,
