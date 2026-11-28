@@ -46,10 +46,28 @@ class EnrollmentController extends Controller
     // كورسات الطالب
     public function myCourses(Request $request): JsonResponse
     {
-
         $userId = $request->user()->id;
 
+        // ضمان ظهور الكورسات المجانية التي بدأ الطالب بمشاهدتها حتى لو لم يُنشأ سجل اشتراك مسبقاً
+        $watchedFreeCourseIds = Course::query()
+            ->where('is_public', true)
+            ->whereHas('sections.lessons.progress', fn ($q) => $q->where('user_id', $userId))
+            ->pluck('id');
+
+        foreach ($watchedFreeCourseIds as $freeCourseId) {
+            Enrollment::firstOrCreate(
+                ['user_id' => $userId, 'course_id' => $freeCourseId],
+                ['status' => 'approved', 'enrolled_at' => now()]
+            );
+        }
+
+        $type = $request->query('type');
+
         $enrollments = Enrollment::where('user_id', $userId)
+            ->when(
+                $type === 'free' || $type === 'paid',
+                fn ($q) => $q->whereIn('course_id', Course::where('is_public', $type === 'free')->pluck('id'))
+            )
             ->with('course')
             ->latest()
             ->get();
