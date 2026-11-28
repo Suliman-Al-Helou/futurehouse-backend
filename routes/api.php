@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\Auth\PasswordResetController;
 use App\Http\Controllers\Api\CourseController;
+use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\EnrollmentController;
 use App\Http\Controllers\Api\Instructor\InstructorCourseController;
@@ -51,6 +52,10 @@ Route::get('/instructors/{id}', [AdminInstructorController::class, 'show']);
 Route::get('/faqs', [AdminFaqController::class, 'index']);
 // ─── Protected ────────────────────────────────────────────
 Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+
     Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
     Route::get('/auth/me', [AuthController::class, 'me']);
     Route::put('/users/{user}', [UserController::class, 'update']);

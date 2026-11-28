@@ -50,6 +50,9 @@ class RoleEndpointMatrixTest extends TestCase
             // ─── Student Protected Endpoints ──────────────────────────────
             'GET api/auth/me' => ['GET', 'api/auth/me', 401, 200, true],
             'POST api/auth/logout' => ['POST', 'api/auth/logout', 401, 200, true],
+            'GET api/notifications' => ['GET', 'api/notifications', 401, 200, true],
+            'POST api/notifications/read-all' => ['POST', 'api/notifications/read-all', 401, 200, true],
+            'POST api/notifications/{id}/read' => ['POST', 'api/notifications/non-existent-id/read', 401, 404, true],
             'GET api/dashboard/stats' => ['GET', 'api/dashboard/stats', 401, 200, true],
             'PUT api/users/{user}' => ['PUT', 'api/users/{user}', 401, 200, true],
             'POST api/courses/{course}/enroll' => ['POST', 'api/courses/{course}/enroll', 401, 200, true],
