@@ -49,6 +49,9 @@
 - **`tdd` / `testing-best-practices`:**
   - **الشرط الإلزامي:** بناء أي Endpoint جديد أو تعديل منطق الحماية والامتحانات والدروس.
   - **الإجراء:** كتابة Feature Tests تغطي مصفوفة الصلاحيات بالكامل (`guest`, `student`, `instructor`, `admin`) قبل دمج الكود.
+- **`github-workflow-standard`:**
+  - **الشرط الإلزامي:** عند بدء أي ميزة جديدة، إنشاء فرع، كتابة أو رفع أي Commit، فتح Pull Request، أو عمل Tag/Release.
+  - **الإجراء:** الالتزام الصارم بـ GitHub Flow، تسمية الفروع (`<type>/<issue-id>-<short-kebab-summary>`)، رسائل Conventional Commits، فحص الجودة قبل الرفع، وترتيب الدمج (الباك إند قبل الفرونت إند).
 
 ---
 
@@ -92,3 +95,10 @@ Before declaring any task complete, you MUST verify:
 8. **Hybrid Public/Authenticated Resolution**: On public endpoints where responses adapt based on authentication (e.g., instructors previewing unreleased draft lessons in a public catalog), always resolve user identity via `auth('sanctum')->user() ?? $request->user()` to support optional Bearer tokens outside `auth:sanctum` middleware.
 9. **Symmetric Testing**: Every validation rule must be tested on BOTH Create (`POST`) and Update (`PUT/PATCH`) endpoints.
 10. **Self-Review**: Run `git diff` and review your own changes for security flaws before reporting completion.
+
+---
+
+# 📋 FEATURE WORKFLOW RULE
+
+- **Mandatory Feature Workflow**: Every new feature MUST follow `docs/FEATURE_WORKFLOW.md` (`Grilling -> To-Spec (Project + Linear) -> To-Ticket -> TDD`).
+- **Living Workflow**: Append new workflow rules and constraints to `docs/FEATURE_WORKFLOW.md` as they are discovered during the project.

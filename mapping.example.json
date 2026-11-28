@@ -1,0 +1,56 @@
+[
+  {
+    "lesson_id": 2,
+    "title": "المتغيرات وأنواع البيانات",
+    "youtube_id": "dQw4w9WgXcQ",
+    "bunny_guid": "REPLACE_WITH_BUNNY_GUID"
+  },
+  {
+    "lesson_id": 3,
+    "title": "الشروط والحلقات",
+    "youtube_id": "dQw4w9WgXcQ",
+    "bunny_guid": "REPLACE_WITH_BUNNY_GUID"
+  },
+  {
+    "lesson_id": 4,
+    "title": "تعريف الدوال واستخدامها",
+    "youtube_id": "dQw4w9WgXcQ",
+    "bunny_guid": "REPLACE_WITH_BUNNY_GUID"
+  },
+  {
+    "lesson_id": 5,
+    "title": "مفهوم الكلاسات والكائنات",
+    "youtube_id": "dQw4w9WgXcQ",
+    "bunny_guid": "REPLACE_WITH_BUNNY_GUID"
+  },
+  {
+    "lesson_id": 7,
+    "title": "Components و Props",
+    "youtube_id": "dQw4w9WgXcQ",
+    "bunny_guid": "REPLACE_WITH_BUNNY_GUID"
+  },
+  {
+    "lesson_id": 8,
+    "title": "useState و useEffect",
+    "youtube_id": "dQw4w9WgXcQ",
+    "bunny_guid": "REPLACE_WITH_BUNNY_GUID"
+  },
+  {
+    "lesson_id": 10,
+    "title": "المتغيرات let و const و var",
+    "youtube_id": "dQw4w9WgXcQ",
+    "bunny_guid": "REPLACE_WITH_BUNNY_GUID"
+  },
+  {
+    "lesson_id": 11,
+    "title": "Promises و Async/Await",
+    "youtube_id": "dQw4w9WgXcQ",
+    "bunny_guid": "REPLACE_WITH_BUNNY_GUID"
+  },
+  {
+    "lesson_id": 13,
+    "title": "Server Components vs Client Components",
+    "youtube_id": "dQw4w9WgXcQ",
+    "bunny_guid": "REPLACE_WITH_BUNNY_GUID"
+  }
+]
