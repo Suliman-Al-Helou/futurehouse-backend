@@ -64,8 +64,10 @@ class EnrollmentController extends Controller
         $type = $request->query('type');
 
         $enrollments = Enrollment::where('user_id', $userId)
-            ->when($type === 'free', fn ($q) => $q->whereHas('course', fn ($c) => $c->where('is_public', true)))
-            ->when($type === 'paid', fn ($q) => $q->whereHas('course', fn ($c) => $c->where('is_public', false)))
+            ->when(
+                $type === 'free' || $type === 'paid',
+                fn ($q) => $q->whereIn('course_id', Course::where('is_public', $type === 'free')->pluck('id'))
+            )
             ->with('course')
             ->latest()
             ->get();
