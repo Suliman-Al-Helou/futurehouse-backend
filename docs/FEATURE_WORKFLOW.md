@@ -33,3 +33,4 @@
 - **Root-Cause Reproduction Test**: For bug-fix tickets, add a failing reproduction test at the exact boundary (backend policy + frontend event flush) before editing production code.
 - **Dual-Sync Completion Gate**: A ticket is only considered complete when its tests pass AND both the Linear issue (`Done`) and `docs/specs/<ticket>.md` (`Status: Completed`) are updated.
 - **Cross-Repo Contract Verification**: For any ticket touching API payloads or tenant/course settings, verify the backend Resource/FormRequest contract against the frontend TypeScript types before marking the ticket Done.
+- **Full-Suite Pre-Push Gate**: Before any `git push`, always run the **full** suite (`vp check && vp test` in frontend, `php artisan test` in backend) — never a filtered subset.
